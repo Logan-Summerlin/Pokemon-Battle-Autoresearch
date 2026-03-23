@@ -4,10 +4,9 @@
 
 sandbox_mode = "workspace-write"
 approval_policy = "auto-edit"
-model = "o4-mini"
 
 [sandbox_workspace_write]
 # All source code (src/), scripts/, tests/, data/ are READ-ONLY.
 # The agent can only modify Autoresearch/run_experiment.py.
-writable_roots = []
+writable_roots = ["Autoresearch/run_experiment.py"]
 network_access = false
