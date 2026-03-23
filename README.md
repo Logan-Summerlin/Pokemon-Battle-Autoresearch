@@ -1,98 +1,113 @@
-# Pokemon Battle Model
+# Pokemon Battle AutoResearch
 
-A structured transformer model for Pokemon battle decision-making under partial observability.
+A standalone repository for **Phase 4 imitation learning** on Gen 3 OU Pokemon battles.
 
-## Project Overview
+This codebase contains the full training pipeline needed to:
 
-This project builds an AI agent that plays Gen 3 OU (ADV) singles on Pokemon Showdown. The model learns from human replay data via behavior cloning, using a candidate-action-scoring transformer architecture with an auxiliary hidden-information prediction head.
+- download replay data from the Metamon dataset,
+- process raw replays into first-person supervised-learning tensors,
+- train BattleTransformer imitation models,
+- run the supported `P8-Lean` and `P4` training jobs, and
+- manage bounded experiment loops through the `Autoresearch/` harness.
 
-**Key design constraints:**
-- The agent only ever sees what a real player would see. Hidden information (opponent items, abilities, EVs, unrevealed moves, unrevealed team members) is never leaked into the observation space.
-- Gen 3 has **no team preview** — the opponent's team is entirely unknown at battle start, making hidden-information prediction central to the architecture.
-- **9-action space** — 4 moves + 5 switches (no Terastallization in Gen 3).
+## Repository Scope
 
-## Current Status
+### Data acquisition
+- `scripts/download_replays.py` — general replay download + sampling.
+- `scripts/download_replays_stratified.py` — stratified Gen 3 OU download plan.
+- `scripts/process_dataset.py` — raw replay → processed tensor pipeline.
 
-- **Phases 0–3**: Complete (scope, Showdown integration, data pipeline, baselines)
-- **Phase 4**: In progress (BattleTransformer model, compute experiments, P8-Lean optimization)
-- **Phases 5–8**: Not started (synthetic fine-tuning, evaluation harness, offline RL, enhancements)
+### Training entry points
+- `scripts/train_phase4.py` — main Phase 4 training loop.
+- `scripts/train_p8_lean.py` — wrapper for the lean Phase 4 model.
+- `scripts/train_p4_25k.py` — wrapper for the larger Phase 4 model.
 
-## Architecture
+### Model and feature pipeline
+- `src/data/replay_parser.py` — parses Metamon replay files.
+- `src/data/observation.py` — builds hidden-information-safe first-person observations.
+- `src/data/tensorizer.py` — tensorizes battle state into model features.
+- `src/data/dataset.py` — processed dataset save/load helpers.
+- `src/data/auxiliary_labels.py` — auxiliary hidden-info labels.
+- `src/data/base_stats.py` — species base-stat lookup.
+- `src/data/priors.py` — metagame prior aggregation used during processing.
+- `src/models/battle_transformer.py` — BattleTransformer architecture and losses.
+- `src/environment/action_space.py` — canonical 9-action vocabulary.
+- `data/raw/pokedex/pokemon_base_stats.csv` — base-stat source used by the feature pipeline.
 
-- **14 tokens/turn**: 6 own-team + 6 opponent-team + field + context
-- **Per-pokemon features**: 28 dims (9 categorical + 14 continuous + 5 binary)
-- **Field**: 19 dims | **Context**: 7 dims
-- **Policy head**: candidate-action scoring with legal mask
-- **Auxiliary head**: predicts opponent hidden info (item, speed tier, role, move families)
-- **Optional value head**: predicts win probability
+### Experiment harness
+- `Autoresearch/run_experiment.py`
+- `Autoresearch/eval_harness.py`
+- `Autoresearch/leaderboard.py`
+- `Autoresearch/experiment_registry.json`
+- `Autoresearch/configs/anchor.yaml`
+- `Autoresearch/notes/000_anchor.md`
 
-### Model Variants
+### Documentation
+- `docs/AUTORESEARCH_IMPLEMENTATION_PLAN.md`
+- `docs/RUNPOD_AUTORESEARCH_SETUP_GUIDE.md`
+- `data/processed/DATA_README.md`
+- `Autoresearch/README.md`
+- `CLAUDE.md` and `AGENTS.md` instructions remain in place.
 
-| Variant | Config | Params | Wrapper Script |
-|---------|--------|--------|----------------|
-| P8 | 4L/256d/4H, W20, aux+value | 3.6M | `train_p8_1k.py` |
-| P8-Lean | 3L/224d/4H/FFN3x, W5, aux only | ~1.95M | `train_p8_lean.py` |
-| P4 | 6L/384d/6H, W20, aux+value | 11.5M | `train_p4_25k.py` |
+## BattleTransformer Summary
 
-## Project Structure
+The retained Phase 4 model is a structured transformer for action prediction under partial observability.
 
-```
-├── docs/                       # Active project documentation
-│   ├── SCOPE.md                # Frozen scope decisions (Gen 3 OU)
-│   ├── EVALUATION_SPEC.md      # Success metrics and evaluation protocol
-│   ├── IMPLEMENTATION_PLAN.md  # Full 8-phase build order
-│   ├── POKEMON_MODEL_PIPELINE_PLAN.md  # 4-stage training pipeline
-│   ├── CHECKPOINT_CONVENTION.md# Model checkpoint naming scheme
-│   └── COMPETITIVE_BATTLE_STRATEGY_GUIDE.md  # Gen 3 OU strategy reference
-├── archive/                    # Historical and superseded documents
-├── configs/                    # Hydra configuration files
-│   ├── model/                  # Model architecture configs
-│   ├── training/               # Training hyperparameters
-│   ├── evaluation/             # Evaluation settings
-│   └── environment/            # Showdown server config
-├── src/                        # Source code
-│   ├── environment/            # Showdown interface and battle env
-│   ├── data/                   # Replay parsing and tensorization
-│   ├── models/                 # Model definitions (baselines + transformer)
-│   ├── training/               # Training loops
-│   ├── bots/                   # Bot implementations
-│   ├── evaluation/             # Evaluation harness
-│   └── synthetic/              # Synthetic scenario factory (stub)
-├── tests/                      # Unit and integration tests
-├── scripts/                    # Training, evaluation, data scripts
-├── data/                       # Processed tensors, vocabs, metadata
-└── checkpoints/                # Model checkpoints
-```
+- **Format:** Gen 3 OU (ADV) singles.
+- **Action space:** 9 canonical actions (4 moves + 5 switches).
+- **Tokens per step:** 14 total.
+  - 6 own-team slots
+  - 6 opponent-team slots
+  - 1 field token
+  - 1 context token
+- **Feature layout:**
+  - pokemon features: 9 categorical + 14 continuous + 5 binary
+  - field features: 19 dims
+  - context features: 7 dims
+- **Heads:**
+  - policy head for action prediction
+  - auxiliary head for hidden-info targets
+  - optional value head in the larger configuration
 
-## Setup
+## End-to-End Pipeline
+
+1. **Download replays** with `scripts/download_replays.py` or `scripts/download_replays_stratified.py`.
+2. **Process raw files** with `scripts/process_dataset.py`.
+3. **Load processed tensors** through the Phase 4 training stack.
+4. **Train** with `scripts/train_phase4.py`, `scripts/train_p8_lean.py`, or `scripts/train_p4_25k.py`.
+5. **Evaluate and compare** experiments through `Autoresearch/`.
+
+## Quick Start
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
-pytest
+
+# 1. Download data
+python scripts/download_replays_stratified.py --target-size 100000 --output-dir data/raw
+
+# 2. Process data
+python scripts/process_dataset.py --input-dir data/raw --output-dir data/processed --generation gen3ou
+
+# 3. Validate the retained Phase 4 stack
+pytest tests/test_parser.py tests/test_observation.py tests/test_tensorizer.py tests/test_transformer.py tests/test_base_stats.py
+
+# 4. Train P8-Lean
+python scripts/train_p8_lean.py --num-battles 10000 --seeds 42 --batch-size 64
+
+# 5. Train P4
+python scripts/train_p4_25k.py --num-battles 25000 --seeds 42 --batch-size 32
 ```
 
-## Training
+## Data Notes
 
-```bash
-# P8 on 1K battles
-python scripts/train_p8_1k.py --num-battles 1000 --seeds 42 --batch-size 32 --epochs 30
+- `data/processed/vocabs/` contains the vocabularies used by the feature pipeline.
+- `data/processed/vocabs/gen3ou/` is also preserved.
+- Large replay tensors are not committed; see `data/processed/DATA_README.md` for the expected processed layout.
 
-# P8-Lean on 10K battles
-python scripts/train_p8_lean.py --num-battles 10000 --seeds 42 43 44 --batch-size 64
+## Next Docs to Read
 
-# Direct trainer with full control
-python scripts/train_phase4.py --mode full --num-battles 10000 --num-layers 4 --hidden-dim 256 --num-heads 4 --max-window 20 --aux-weight 0.2 --seed 42
-```
-
-## Documentation
-
-| Document | Purpose |
-|----------|---------|
-| [SCOPE.md](docs/SCOPE.md) | Frozen scope: format, info regime, data, architecture |
-| [IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) | Full 8-phase roadmap with exit gates |
-| [EVALUATION_SPEC.md](docs/EVALUATION_SPEC.md) | Metrics, thresholds, evaluation protocol (Gen 3 calibrated) |
-| [POKEMON_MODEL_PIPELINE_PLAN.md](docs/POKEMON_MODEL_PIPELINE_PLAN.md) | 4-stage training pipeline (BC → SFT → RL → repair) |
-| [CHECKPOINT_CONVENTION.md](docs/CHECKPOINT_CONVENTION.md) | Checkpoint naming scheme and model variants |
-| [COMPETITIVE_BATTLE_STRATEGY_GUIDE.md](docs/COMPETITIVE_BATTLE_STRATEGY_GUIDE.md) | Gen 3 OU competitive strategy reference |
+- `docs/AUTORESEARCH_IMPLEMENTATION_PLAN.md`
+- `docs/RUNPOD_AUTORESEARCH_SETUP_GUIDE.md`
+- `Autoresearch/README.md`
