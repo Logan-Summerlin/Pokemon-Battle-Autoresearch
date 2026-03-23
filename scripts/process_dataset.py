@@ -230,11 +230,8 @@ def main() -> None:
     metadata["elo_distribution"] = elo_counts
     metadata["avg_turns"] = metadata["num_turns"] / metadata["num_perspectives"]
 
-    # Save vocabularies to generation-specific subdirectory
+    # Save vocabularies
     vocabs.freeze_all()
-    vocab_dir = output_dir / "vocabs" / generation
-    vocabs.save(vocab_dir)
-    # Also save to default vocabs/ for backward compatibility
     vocabs.save(output_dir / "vocabs")
 
     # Save perspective -> battle_id mapping for reproducibility
