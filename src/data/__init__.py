@@ -1,9 +1,11 @@
-"""Data pipeline for Pokemon battle model training.
+"""Phase 4 data pipeline modules.
 
-Phase 2 modules:
-- replay_parser: Parse Metamon-format replay files
-- observation: Build first-person observations from parsed replays
-- tensorizer: Convert observations to fixed-size tensors
-- dataset: PyTorch datasets and data loading utilities
-- priors: Metagame usage statistics for soft opponent prediction
+Modules:
+- replay_parser: load Metamon-style replay files
+- observation: build hidden-information-safe first-person observations
+- tensorizer: convert observations into fixed tensors
+- dataset: save/load processed tensorized battles
+- auxiliary_labels: build auxiliary hidden-info targets
+- base_stats: species base-stat lookup used by the observation pipeline
+- priors: metagame prior aggregation used during processing
 """

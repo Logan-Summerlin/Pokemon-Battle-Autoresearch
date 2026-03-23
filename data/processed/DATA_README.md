@@ -1,25 +1,47 @@
-# Data Directory
+# Processed Data README
 
-Large data files are not committed to git. Copy or regenerate them after cloning.
+Large processed replay tensors are not committed to git, but the expected directory structure is fixed.
 
-## Required Files
+## Expected layout
 
-```
+```text
 data/processed/
-├── metadata.json           # Battle metadata (~4MB) - copy from parent repo
-├── perspective_map.json    # Player perspective mapping (~6MB) - copy from parent repo
-├── priors.json             # Metagame priors (~220KB) - copy from parent repo
-├── vocabs/gen3ou/          # Vocabularies (included in repo)
-└── battles/                # .npz tensor files (15GB+, download with scripts)
+├── battles/                # generated processed battle tensors
+├── metadata.json           # dataset metadata
+├── perspective_map.json    # perspective ID -> base battle ID mapping
+├── priors.json             # processing-time metagame priors
+└── vocabs/
+    ├── abilities.json
+    ├── actions.json
+    ├── gen3ou/
+    │   ├── abilities.json
+    │   ├── actions.json
+    │   ├── items.json
+    │   ├── moves.json
+    │   ├── species.json
+    │   ├── status.json
+    │   ├── terrain.json
+    │   ├── types.json
+    │   └── weather.json
+    ├── items.json
+    ├── moves.json
+    ├── species.json
+    ├── status.json
+    ├── terrain.json
+    ├── types.json
+    └── weather.json
 ```
 
-## Setup
+## How to populate it
+
+1. Download raw replay files into `data/raw/`.
+2. Run:
 
 ```bash
-# Option 1: Copy from existing Pokemon-Battle-Model repo
-cp /path/to/Pokemon-Battle-Model/data/processed/{metadata,perspective_map,priors}.json data/processed/
-
-# Option 2: Download and process from scratch
-python scripts/download_replays_stratified.py --format gen3ou --num-battles 100000
-python scripts/process_dataset.py --input data/raw --output data/processed
+python scripts/process_dataset.py --input-dir data/raw --output-dir data/processed --generation gen3ou
 ```
+
+## Notes
+
+- The vocabularies in this repository are preserved because they are part of the training interface.
+- The `battles/` directory is expected to be generated locally.
