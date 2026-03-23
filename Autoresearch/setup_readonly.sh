@@ -30,8 +30,12 @@ echo "  Setting Autoresearch docs and harness helpers to read-only..."
 for f in AGENTS.md README.md eval_harness.py leaderboard.py experiment_registry.json setup_readonly.sh; do
     chmod 444 "$REPO_ROOT/Autoresearch/$f" 2>/dev/null || true
 done
-find "$REPO_ROOT/Autoresearch/configs" -type f -exec chmod 444 {} \;
-find "$REPO_ROOT/Autoresearch/notes" -type f -exec chmod 444 {} \;
+
+echo "  Protecting agent config files from self-modification..."
+chmod 444 "$REPO_ROOT/.claude/settings.json" 2>/dev/null || true
+chmod 444 "$REPO_ROOT/.claude/rules/memory.md" 2>/dev/null || true
+chmod 444 "$REPO_ROOT/.codex/config.toml" 2>/dev/null || true
+chmod 444 "$REPO_ROOT/.codex/AGENTS.md" 2>/dev/null || true
 
 echo "  Ensuring run_experiment.py is writable..."
 chmod 644 "$REPO_ROOT/Autoresearch/run_experiment.py"

@@ -33,6 +33,11 @@
       "Edit(src/data/replay_parser.py)",
       "Edit(data/splits/**)",
       "Edit(docs/EVALUATION_SPEC.md)",
+      "Edit(tests/test_parser.py)",
+      "Edit(tests/test_observation.py)",
+      "Edit(tests/test_tensorizer.py)",
+      "Edit(tests/test_transformer.py)",
+      "Edit(tests/test_base_stats.py)",
       "Bash(rm -rf *)",
       "Bash(rm -r data/*)",
       "Bash(rm -r checkpoints/*)"
