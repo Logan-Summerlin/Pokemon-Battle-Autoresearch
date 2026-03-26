@@ -9,7 +9,9 @@
 - Switch prediction 37-48% vs 72-75% for moves (biggest accuracy lever)
 - Calibration: systematic overconfidence in 0.4-0.8 range
 
-## Key Experimental Variables
-- Context window (current=2, optimal likely 2-8 turns)
+## Some Example Experimental Variables
 - Dataset size (50K used, >100K available)
 - Switch-specific loss weighting
+- Layers
+- Hidden Dim
+- Dropout
