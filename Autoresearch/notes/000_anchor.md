@@ -36,9 +36,7 @@ Frozen anchor checkpoint for all AutoResearch comparisons. Trained on GTX 1650 w
 
 3. **Calibration shows systematic overconfidence** in the 0.4–0.8 confidence range.
 
-4. **Context window of 2 turns is extremely short.** The model has almost no battle history. This is the highest-priority experiment variable (AR3-02).
-
-5. **Only 50K of >100K available battles used.** Training on the full dataset is an obvious early experiment.
+4. **Only 50K of >100K available battles used.** Training on the full dataset is an obvious early experiment.
 
 ## Decision
 
