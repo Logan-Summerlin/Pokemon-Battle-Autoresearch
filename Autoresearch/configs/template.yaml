@@ -4,7 +4,7 @@
 # Only change values you're experimenting with.
 # Unchanged values inherit from the anchor (AR-000) via run_experiment.py.
 #
-# Usage:
+# Usage example:
 #   python Autoresearch/run_experiment.py \
 #     --name my_experiment \
 #     --parent anchor \
@@ -25,8 +25,8 @@ item_embedding_dim: 16
 ability_embedding_dim: 16
 type_embedding_dim: 12
 
-# Context Window (KEY VARIABLE)
-max_window: 2           # 2-20 range; increasing this is highest-priority experiment
+# Context Window
+max_window: 2           # 2-8 range
 
 # Training
 batch_size: 64          # Scale up on A40: 128, 256, 512, 1024
@@ -38,7 +38,7 @@ grad_accum: 1           # Gradient accumulation steps
 patience: 7             # Early stopping patience
 
 # Data
-num_battles: 50000      # Up to 100000+ available
+num_battles: 50000      # More than 100000+ available
 seed: 42
 data_dir: data/processed
 
