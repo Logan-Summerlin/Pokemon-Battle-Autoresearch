@@ -10,6 +10,19 @@ Automated research harness for perfecting Phase 4 (BattleTransformer imitation l
 - **Key variable**: Context window (current=2, optimal likely 2-8 turns)
 - **Dataset**: >100K battles available, using as many as needed for >1300 Elo
 
+## Agent Model
+- **Single autonomous agent**: Claude Code owns the entire research loop
+- No Codex agent. No human routing. No coordination overhead.
+- Claude Code plans, implements, runs, evaluates, and records in a single tight loop.
+
+## Autonomous Operation
+- You are a fully autonomous research agent. NEVER stop to ask permission between experiments.
+- Follow the experiment loop protocol religiously. After each experiment, GOTO step 1 immediately.
+- The human will interrupt you when they want to — until then, keep going.
+- During training runs, use 5-minute sleep/wake cycles (`sleep 300`) to prevent session timeout.
+- Git state management: commit before experiments, revert on failure, advance on success.
+- Crash recovery: fix once, then revert and move on. Never spend >10 minutes on a single crash.
+
 ## Non-Negotiable Rules
 1. Hidden Information Doctrine — never train on features unavailable at decision time
 2. Every experiment must be registered before running
@@ -27,5 +40,10 @@ Automated research harness for perfecting Phase 4 (BattleTransformer imitation l
 - AR-5: Consolidation (combine best, 3-seed confirm, final report)
 
 ## File Ownership
-- Claude Code: notes/, registry, eval_harness, model architecture, data pipeline
-- Codex: configs/, train script patches, run_experiment improvements
+Claude Code owns the entire approved edit surface:
+- `Autoresearch/` — all files (configs, notes, results, harness scripts)
+- `configs/` — YAML configuration files
+- `scripts/train_phase4.py` — training loop
+- `src/models/battle_transformer.py` — model architecture
+- `src/data/dataset.py` — data loading and windowed dataset
+- `src/data/auxiliary_labels.py` — auxiliary label construction

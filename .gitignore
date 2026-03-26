@@ -49,5 +49,9 @@ mlruns/
 .DS_Store
 Thumbs.db
 
+# AutoResearch experiment outputs (large)
+experiments/*/
+!experiments/.gitkeep
+
 # Environment variables
 .env

@@ -47,7 +47,8 @@ This codebase contains the full training pipeline needed to:
 - `docs/RUNPOD_AUTORESEARCH_SETUP_GUIDE.md`
 - `data/processed/DATA_README.md`
 - `Autoresearch/README.md`
-- `CLAUDE.md` and `AGENTS.md` instructions remain in place.
+- `CLAUDE.md` — autonomous Claude Code agent instructions (NEVER STOP directive, experiment priority queue)
+- `Autoresearch/AGENTS.md` — single-agent autonomous operation guide
 
 ## BattleTransformer Summary
 
@@ -103,7 +104,6 @@ python scripts/train_p4_25k.py --num-battles 25000 --seeds 42 --batch-size 32
 ## Data Notes
 
 - `data/processed/vocabs/` contains the vocabularies used by the feature pipeline.
-- `data/processed/vocabs/gen3ou/` is also preserved.
 - Large replay tensors are not committed; see `data/processed/DATA_README.md` for the expected processed layout.
 
 ## Next Docs to Read
