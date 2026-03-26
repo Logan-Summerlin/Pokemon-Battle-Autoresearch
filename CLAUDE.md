@@ -72,7 +72,7 @@ You **MUST NOT** modify without explicit human approval:
 - `src/data/tensorizer.py` — tensorization (data integrity)
 - `src/data/replay_parser.py` — replay parsing (data integrity)
 - `data/splits/` — split manifests (evaluation integrity)
-- `docs/EVALUATION_SPEC.md` — benchmark definition
+
 - `tests/` — do not delete or weaken tests (adding new tests is fine)
 
 ## Experiment Loop Protocol
