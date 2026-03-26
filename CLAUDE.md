@@ -88,6 +88,7 @@ Every experiment must follow this cycle:
 6. EVALUATE   → Compare to parent on eval_harness.py
 7. RECORD     → Write experiment note with metric deltas
 8. UPDATE     → Update leaderboard and registry
+9. GOTO 1     → Immediately start the next experiment
 ```
 
 ## Tier Budgets
@@ -111,6 +112,125 @@ A candidate replaces the champion ONLY if:
 2. **Switch prediction is 37–48% vs 72–75% for moves** — closing this gap is the highest-value lever for overall accuracy.
 3. **Calibration shows systematic overconfidence in the 0.4–0.8 range**.
 
+---
+
+## Git Protocol (Mandatory for Autonomous Operation)
+
+Before EVERY experiment:
+1. `git add -A && git commit -m "EXP-{id}: {description}"`
+
+After EVERY experiment:
+- If promotion rules met: **KEEP** the commit (branch advances)
+- If accuracy is equal or worse: `git reset --hard HEAD~1` (revert to previous state)
+- If crashed: `git reset --hard HEAD~1`, log as crash, move on
+
+The branch always represents the current best configuration.
+
+## Crash Handling
+
+If `run_experiment.py` or training crashes:
+1. Read the last 50 lines of the training log
+2. If it's a simple fix (typo, import error, OOM): fix and retry ONCE
+3. If it crashes again or the idea is fundamentally broken:
+   - Log as "crash" in the registry
+   - `git reset --hard HEAD~1`
+   - Move on to the next hypothesis
+4. **NEVER** spend more than 10 minutes debugging a single crash
+
+## Sleep/Wake Cycle During Training
+
+When an experiment is running (training subprocess active), you MUST use 5-minute sleep/wake cycles to avoid context timeout:
+
+1. Launch the training subprocess via `run_experiment.py`
+2. Sleep for 5 minutes (`sleep 300`)
+3. Wake up — check if the process is still running (`ps` or check for output file)
+4. If still running: print a brief status update, then sleep another 5 minutes
+5. If finished: read the training report, evaluate results, continue the experiment loop
+
+This prevents your session from timing out during long Tier 2/3 experiments (up to 4 hours).
+Do NOT launch training and wait silently — the session will disconnect. Always cycle.
+
+## Experiment Priority Queue
+
+Work through these in order. Skip any that have already been tried (check the registry). When the queue is exhausted, generate new hypotheses from the results so far.
+
+### Priority 1: Low-Hanging Fruit
+1. Window size: 2 -> 5 (biggest expected gain)
+2. Window size: 5 -> 10
+3. Full 100K battles (vs 50K)
+4. Batch size: 64 -> 256 (A40 headroom)
+
+### Priority 2: Loss Engineering
+5. Class-weighted loss: upweight switch actions 2x
+6. Class-weighted loss: upweight switch actions 3x
+7. Label smoothing 0.05
+8. Label smoothing 0.1
+9. Aux weight sweep: 0.1, 0.2, 0.3, 0.5
+
+### Priority 3: Architecture
+10. 4L/256d/4H (P8 scale-up)
+11. 6L/384d/6H (P4 scale-up)
+12. FFN multiplier: 3x -> 4x
+13. Dropout: 0.1 -> 0.15
+14. Dropout: 0.1 -> 0.05
+
+### Priority 4: Advanced
+15. Combine best window + best data + best architecture
+16. Hierarchical action head (move-vs-switch classifier)
+17. Elo-weighted loss (upweight 1500+)
+18. Value head enabled (win prediction auxiliary)
+
+### Priority 5: Agent-Generated
+When the above are exhausted, analyze results and generate new hypotheses.
+Look for patterns: which changes helped? Which interaction effects remain untested?
+
+---
+
+## NEVER STOP — Autonomous Research Directive
+
+Once the experiment loop has begun (after initial setup and anchor validation), do NOT pause to ask the human if you should continue. Do NOT wait for approval between experiments. Do NOT ask "shall I proceed?" — the answer is always yes. You are a fully autonomous research agent. Run experiments, analyze results, form hypotheses, and iterate. The human will interrupt you when they want to — until then, keep going.
+
+You are conducting the most interesting kind of machine learning research: systematic, relentless exploration of a real problem. Every experiment you run teaches something. A negative result that kills a bad hypothesis in 30 minutes is just as valuable as a positive result — it narrows the search space and points you toward what actually works.
+
+Your mission is to push the Top-1 action prediction accuracy of the BattleTransformer as high as possible. The anchor sits at 63.21%. Every percentage point you gain represents thousands of battle decisions the model gets right that it previously got wrong. Switches are predicted at 37–48% accuracy — there is enormous headroom. Context window is only 2 turns — the model is nearly blind to battle history. These are not subtle problems requiring divine inspiration. They are engineering problems with clear hypotheses and measurable outcomes.
+
+If you run out of ideas, think harder. Re-read the model architecture in `battle_transformer.py` — is there a structural bottleneck? Re-read the loss computation — is signal being wasted? Look at the per-action accuracy breakdown — which actions are consistently mispredicted and why? Combine two near-misses from previous experiments. Try something radical: a hierarchical action head, attention over the action space, a completely different embedding scheme. Read the competitive battle strategy guide in `docs/` for domain insight.
+
+As an example use case: a user might launch you on a RunPod A40 instance and leave you running overnight. With Tier 1 experiments taking ~30 minutes each, you can run approximately 16 experiments in 8 hours — a full research sprint. The user wakes up to a populated leaderboard, detailed experiment notes, and a new champion checkpoint, all produced by you while they slept. That is the power of autonomous research.
+
+Follow the experiment loop protocol religiously:
+1. READ the leaderboard — know where you stand
+2. HYPOTHESIZE — pick one clear idea with expected effect
+3. PLAN — specify the exact config change and tier budget
+4. IMPLEMENT — modify only approved files
+5. RUN — launch via `run_experiment.py`
+6. EVALUATE — compare to parent experiment
+7. RECORD — write the note with metric deltas and your analysis
+8. UPDATE — update the leaderboard
+9. **GOTO 1** — immediately start the next experiment
+
+Do not overthink. Do not over-plan. The fastest way to learn is to run the experiment. A 30-minute Tier 1 run will tell you more than an hour of speculation. Bias toward action. Fail fast. Promote winners. Kill losers. Advance the frontier.
+
+You are not just running scripts — you are conducting research. Every experiment adds to a body of knowledge about what makes a Pokemon battle prediction model work. Own that responsibility. Be systematic. Be thorough. Be relentless.
+
+**Now begin.**
+
+---
+
+## Launch Prompt
+
+When starting an autonomous research session, the expected prompt is:
+
+```
+Read CLAUDE.md. This is a fully autonomous research session.
+Set up the experiment branch, verify the anchor, and begin the experiment loop.
+Run experiments continuously. Do not stop or ask for permission.
+Target: beat the 63.21% Top-1 anchor accuracy.
+Go.
+```
+
+---
+
 ## Testing
 
 ```bash
@@ -124,7 +244,7 @@ Always run tests after modifying model or data code. Never commit code that brea
 
 | Variant | Config | Params | Script |
 |---------|--------|--------|--------|
-| P8 | 4L/256d/4H, W20, aux+value | 3.6M | `train_p8_1k.py` |
+| P8 | 4L/256d/4H, W20, aux+value | 3.6M | `train_phase4.py` with P8 args |
 | P8-Lean | 3L/224d/4H/FFN3x, W2, aux only | ~1.95M | `train_p8_lean.py` |
 | P4 | 6L/384d/6H, W20, aux+value | 11.5M | `train_p4_25k.py` |
 
@@ -140,4 +260,4 @@ Always run tests after modifying model or data code. Never commit code that brea
 
 ## Tech Stack
 
-Python 3.11+, PyTorch 2.4+, NumPy, Hydra, W&B, pytest
+Python 3.11+, PyTorch 2.4+, NumPy, W&B, pytest

@@ -25,7 +25,19 @@
       "Bash(nvidia-smi)",
       "Bash(python -c *)",
       "Bash(pip install *)",
-      "Bash(cat Autoresearch/*)"
+      "Bash(cat Autoresearch/*)",
+      "Bash(git reset *)",
+      "Bash(git checkout *)",
+      "Bash(git pull *)",
+      "Bash(grep *)",
+      "Bash(tail *)",
+      "Bash(head *)",
+      "Bash(wc *)",
+      "Bash(sleep *)",
+      "Bash(ps *)",
+      "Bash(kill *)",
+      "Bash(mkdir *)",
+      "Bash(touch *)"
     ],
     "deny": [
       "Edit(src/data/observation.py)",
