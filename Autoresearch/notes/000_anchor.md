@@ -50,3 +50,4 @@ PROMOTE — this is the frozen anchor, not a candidate.
 2. Debug auxiliary speed/role heads (AR-1)
 3. Window size sweep: 2 → 3 → 5 → 8 (AR3-02)
 4. Full dataset training (AR3-01)
+5. Hypothesize next experiments, and run them
