@@ -2,7 +2,7 @@
 
 ## What This Is
 
-An automated research harness for perfecting Phase 4 (BattleTransformer imitation learning) of the Pokemon Battle Model project. The goal is to maximize action prediction accuracy on **>1300 Elo Gen 3 OU (ADV) singles** replay data from the Metamon dataset.
+An automated research harness for perfecting Phase 4 (BattleTransformer imitation learning) of the Pokemon Battle Model project. The goal is to maximize action prediction accuracy on **>1300 Elo Gen 3 OU (ADV) singles** replay data from the Metamon dataset. The accuracy of the imitation learning neural network should **always** be tested on >1300 elo battles, regardless of its training or validation data.
 
 ## Objective
 
@@ -24,10 +24,10 @@ An automated research harness for perfecting Phase 4 (BattleTransformer imitatio
 
 - **Source**: Metamon (jakegrigsby/metamon-parsed-replays on HuggingFace)
 - **Format**: Gen 3 OU (ADV) singles
-- **Volume**: Full dataset is >100,000 battles. Use as many as necessary.
-- **Elo filter**: >1300 Elo. Higher-Elo data is more informative for imitation learning.
+- **Volume**: Full dataset is >100,000 battles. Use as many as necessary. There is no restriction for elo tiers for training, but higher elo is probably better for training.
+- **Elo**: Download the full ADV dataset, but training and validation data should generally be >1300 Elo battles. Higher-Elo data is more informative for imitation learning.
+- **Test Data**: The accuracy of the imitation learning neural network should **always** be tested on >1300 elo battles, regardless of its training or validation data.
 - **Splits**: 80/10/10 by battle ID (no turn-level leakage)
-- **Context window**: Current is 2 turns. Optimal is likely 2–8 turns — this is a key experimental variable.
 
 ## Hidden Information Doctrine (Non-Negotiable)
 
@@ -155,8 +155,7 @@ Do NOT launch training and wait silently — the session will disconnect. Always
 Work through these in order. Skip any that have already been tried (check the registry). When the queue is exhausted, generate new hypotheses from the results so far.
 
 ### Priority 1: Low-Hanging Fruit
-1. Window size: 2 -> 5 (biggest expected gain)
-2. Window size: 5 -> 10
+1. Window size: 2 -> 5
 3. Full 100K battles (vs 50K)
 4. Batch size: 64 -> 256 (A40 headroom)
 
@@ -179,10 +178,14 @@ Work through these in order. Skip any that have already been tried (check the re
 16. Hierarchical action head (move-vs-switch classifier)
 17. Elo-weighted loss (upweight 1500+)
 18. Value head enabled (win prediction auxiliary)
+19. Curriculum Training (to maximize training data)
+20. Muon Optimization
 
 ### Priority 5: Agent-Generated
 When the above are exhausted, analyze results and generate new hypotheses.
 Look for patterns: which changes helped? Which interaction effects remain untested?
+Be creative, try to find the optimal way to train the neural network.
+Examine the dataset, do we need more training data? Different elo Gen 3 training data?
 
 ---
 
@@ -253,7 +256,7 @@ Always run tests after modifying model or data code. Never commit code that brea
 - No Terastallization (Gen 9 mechanic)
 - No team preview — opponent team unknown at battle start
 - Type-based physical/special split — move category determined by type
-- Permanent weather — Sand Stream lasts indefinitely
+- Permanent Sandstorm — Sand Stream lasts indefinitely
 - Spikes only — no Stealth Rock, Toxic Spikes, or Sticky Web
 - No pivot moves — no U-turn, Volt Switch, Flip Turn
 - No Choice Scarf/Specs — only Choice Band exists
