@@ -83,6 +83,10 @@ class TransformerConfig:
     num_role_archetypes: int = 8
     num_move_families: int = 10
 
+    # Policy loss tuning
+    switch_weight: float = 1.0  # Upweight switch actions in policy loss (1.0 = no upweighting)
+    label_smoothing: float = 0.0  # Label smoothing for policy loss
+
     # Value head
     use_value_head: bool = True
     value_loss_weight: float = 0.1
@@ -915,16 +919,28 @@ def compute_policy_loss(
     targets: torch.Tensor,
     legal_mask: torch.Tensor,
     ignore_index: int = -1,
+    switch_weight: float = 1.0,
+    label_smoothing: float = 0.0,
 ) -> torch.Tensor:
     """Masked cross-entropy loss for action prediction.
 
     Same as baseline masked_cross_entropy but standalone for clarity.
+    Supports per-class weighting for switch actions and label smoothing.
     """
     masked_logits = logits.masked_fill(legal_mask == 0, float("-inf"))
 
     valid = targets != ignore_index
     if valid.any():
-        return F.cross_entropy(masked_logits[valid], targets[valid])
+        weight = None
+        if switch_weight != 1.0:
+            num_actions = logits.shape[-1]
+            weight = torch.ones(num_actions, device=logits.device)
+            # Actions 4-8 are switches (switch2-switch6)
+            weight[4:] = switch_weight
+        return F.cross_entropy(
+            masked_logits[valid], targets[valid],
+            weight=weight, label_smoothing=label_smoothing,
+        )
     return torch.tensor(0.0, device=logits.device, requires_grad=True)
 
 
@@ -1030,7 +1046,12 @@ def compute_total_loss(
     loss_dict: dict[str, float] = {}
 
     # Policy loss
-    policy_loss = compute_policy_loss(output.policy_logits, action_targets, legal_mask)
+    sw = config.switch_weight if config else 1.0
+    ls = config.label_smoothing if config else 0.0
+    policy_loss = compute_policy_loss(
+        output.policy_logits, action_targets, legal_mask,
+        switch_weight=sw, label_smoothing=ls,
+    )
     total = policy_loss
     loss_dict["policy"] = policy_loss.item()
 

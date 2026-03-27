@@ -731,6 +731,10 @@ def main() -> None:
     parser.add_argument("--aux-weight", type=float, default=0.2)
     parser.add_argument("--value-weight", type=float, default=0.1)
     parser.add_argument("--no-value-head", action="store_true")
+    parser.add_argument("--switch-weight", type=float, default=1.0,
+                       help="Upweight switch actions in policy loss (1.0 = uniform, 2.0 = 2x switch weight)")
+    parser.add_argument("--label-smoothing", type=float, default=0.0,
+                       help="Label smoothing for policy loss (0.0 = none)")
     parser.add_argument("--max-window", type=int, default=20)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--checkpoint-dir", type=str, default=None)
@@ -967,6 +971,8 @@ def main() -> None:
         use_value_head=not args.no_value_head,
         value_loss_weight=args.value_weight,
         prune_dead_features=args.prune_dead_features,
+        switch_weight=args.switch_weight,
+        label_smoothing=args.label_smoothing,
     )
     model = BattleTransformer(config).to(device)
     param_count = model.count_parameters()
@@ -996,6 +1002,7 @@ def main() -> None:
         "persistent_workers": loader_kwargs.get("persistent_workers"),
         "non_blocking_transfer": args.non_blocking_transfer,
         "aux_loss_weight": args.aux_weight, "value_loss_weight": args.value_weight,
+        "switch_weight": args.switch_weight, "label_smoothing": args.label_smoothing,
         "use_value_head": not args.no_value_head,
         "max_window": args.max_window, "device": device, "seed": args.seed,
         "amp": amp_name,
