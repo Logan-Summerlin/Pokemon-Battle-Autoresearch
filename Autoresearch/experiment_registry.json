@@ -413,5 +413,220 @@
     "return_code": 0,
     "end_timestamp": "2026-03-27T15:27:07.649938+00:00",
     "notes_summary": "Window 5 KILL: 55.10% Top-1 (-8.11pp). Switch accuracy catastrophic at 19.4% (anchor 42.8%). Model too small for longer context."
+  },
+  {
+    "experiment_id": "AR-005",
+    "parent_id": "AR-000",
+    "name": "switch_weight_2x",
+    "description": "2x class weight on switch actions in policy loss",
+    "hypothesis": "Switch accuracy is 42.75% vs 74.17% for moves. Upweighting switch loss 2x forces the model to allocate more capacity to distinguishing correct switch targets. Switches are 35% of actions so a 5pp switch improvement = ~1.75pp overall.",
+    "expected_impact": "Top-1 +1-2pp, switch accuracy +5-10pp",
+    "phase": "AR-unassigned",
+    "family": "loss",
+    "profile": null,
+    "profile_description": null,
+    "tier": 2,
+    "dataset_version": "gen3ou_50k_v1",
+    "tags": [],
+    "status": "completed",
+    "config_changes": {
+      "amp": "bf16",
+      "batch_size": 256,
+      "num_workers": 4,
+      "switch_weight": 2.0
+    },
+    "full_config": {
+      "num_layers": 3,
+      "hidden_dim": 224,
+      "num_heads": 4,
+      "ffn_multiplier": 3,
+      "species_embedding_dim": 48,
+      "move_embedding_dim": 24,
+      "item_embedding_dim": 16,
+      "ability_embedding_dim": 16,
+      "type_embedding_dim": 12,
+      "max_window": 2,
+      "dropout": 0.1,
+      "aux_weight": 0.2,
+      "value_weight": 0.1,
+      "switch_weight": 2.0,
+      "label_smoothing": 0.0,
+      "no_value_head": true,
+      "prune_dead_features": true,
+      "batch_size": 256,
+      "epochs": 30,
+      "lr": 0.0001,
+      "weight_decay": 0.01,
+      "warmup_steps": 300,
+      "patience": 7,
+      "grad_accum": 1,
+      "num_battles": 50000,
+      "seed": 42,
+      "data_dir": "data/processed",
+      "num_workers": 4,
+      "prefetch_factor": 4,
+      "persistent_workers": null,
+      "pin_memory": null,
+      "non_blocking_transfer": null,
+      "amp": "bf16",
+      "torch_compile": false
+    },
+    "metrics": {
+      "test_top1_accuracy": 0.6185,
+      "test_top3_accuracy": 0.896,
+      "test_loss": 1.0609,
+      "test_nll": 1.0607,
+      "test_ece": null,
+      "per_action_accuracy": {
+        "move1": {
+          "accuracy": 0.6726,
+          "count": 14100
+        },
+        "move2": {
+          "accuracy": 0.6182,
+          "count": 13977
+        },
+        "move3": {
+          "accuracy": 0.6389,
+          "count": 15118
+        },
+        "move4": {
+          "accuracy": 0.6695,
+          "count": 13274
+        },
+        "switch2": {
+          "accuracy": 0.6192,
+          "count": 7374
+        },
+        "switch3": {
+          "accuracy": 0.5465,
+          "count": 7076
+        },
+        "switch4": {
+          "accuracy": 0.5115,
+          "count": 6534
+        },
+        "switch5": {
+          "accuracy": 0.5534,
+          "count": 5698
+        },
+        "switch6": {
+          "accuracy": 0.5708,
+          "count": 3567
+        }
+      },
+      "move_accuracy": null,
+      "switch_accuracy": null,
+      "move_count": null,
+      "switch_count": null,
+      "best_epoch": 30,
+      "best_val_loss": 1.0657,
+      "wall_time_min": 83.7,
+      "parameter_count": 1717540,
+      "throughput_examples_sec": 11013.0,
+      "gpu_memory_used_gb": 0.054,
+      "peak_ram_gb": 16.229
+    },
+    "delta_from_parent": {
+      "test_top1_accuracy": -0.0136,
+      "test_top3_accuracy": 0.0033,
+      "test_loss": 0.0461,
+      "test_nll": 0.0459,
+      "throughput_examples_sec": 9493.0,
+      "wall_time_min": -128.3
+    },
+    "decision": "KILL",
+    "notes": "/workspace/Pokemon-Battle-Autoresearch/Autoresearch/notes/ar-005_switch_weight_2x.md",
+    "timestamp": "2026-03-27T18:41:14.262839+00:00",
+    "seed": 42,
+    "checkpoint_path": "/workspace/Pokemon-Battle-Autoresearch/checkpoints/autoresearch_ar-005_switch_weight_2x",
+    "report_path": "/workspace/Pokemon-Battle-Autoresearch/Autoresearch/results/ar-005_switch_weight_2x_report.json",
+    "budget": {
+      "max_epochs": 30,
+      "max_minutes": 120
+    },
+    "lineage": {
+      "parent_name": "anchor",
+      "base_config_source": "AR-000"
+    },
+    "start_timestamp": "2026-03-27T18:41:14.281969+00:00",
+    "return_code": 0,
+    "end_timestamp": "2026-03-27T20:04:56.141222+00:00",
+    "notes_summary": "Switch 2x: 61.85% Top-1 (-1.36pp). Switch acc +13.3pp but move acc -9.3pp. 2x too aggressive, try 1.5x."
+  },
+  {
+    "experiment_id": "AR-006",
+    "parent_id": "AR-000",
+    "name": "switch_weight_1.5x",
+    "description": "1.5x class weight on switch actions - finding the sweet spot",
+    "hypothesis": "AR-005 showed 2x switch weight improved switch acc +13.3pp but degraded moves -9.3pp. 1.5x should find a better balance: moderate switch gains with less move cost, potentially beating anchor overall.",
+    "expected_impact": "Top-1 +0.5-1.5pp, switch acc +5-8pp, move acc -3-5pp",
+    "phase": "AR-unassigned",
+    "family": "loss",
+    "profile": null,
+    "profile_description": null,
+    "tier": 2,
+    "dataset_version": "gen3ou_50k_v1",
+    "tags": [],
+    "status": "running",
+    "config_changes": {
+      "amp": "bf16",
+      "batch_size": 256,
+      "num_workers": 4,
+      "switch_weight": 1.5
+    },
+    "full_config": {
+      "num_layers": 3,
+      "hidden_dim": 224,
+      "num_heads": 4,
+      "ffn_multiplier": 3,
+      "species_embedding_dim": 48,
+      "move_embedding_dim": 24,
+      "item_embedding_dim": 16,
+      "ability_embedding_dim": 16,
+      "type_embedding_dim": 12,
+      "max_window": 2,
+      "dropout": 0.1,
+      "aux_weight": 0.2,
+      "value_weight": 0.1,
+      "switch_weight": 1.5,
+      "label_smoothing": 0.0,
+      "no_value_head": true,
+      "prune_dead_features": true,
+      "batch_size": 256,
+      "epochs": 30,
+      "lr": 0.0001,
+      "weight_decay": 0.01,
+      "warmup_steps": 300,
+      "patience": 7,
+      "grad_accum": 1,
+      "num_battles": 50000,
+      "seed": 42,
+      "data_dir": "data/processed",
+      "num_workers": 4,
+      "prefetch_factor": 4,
+      "persistent_workers": null,
+      "pin_memory": null,
+      "non_blocking_transfer": null,
+      "amp": "bf16",
+      "torch_compile": false
+    },
+    "metrics": {},
+    "delta_from_parent": {},
+    "decision": null,
+    "notes": "/workspace/Pokemon-Battle-Autoresearch/Autoresearch/notes/ar-006_switch_weight_1_5x.md",
+    "timestamp": "2026-03-27T20:21:11.399022+00:00",
+    "seed": 42,
+    "checkpoint_path": "/workspace/Pokemon-Battle-Autoresearch/checkpoints/autoresearch_ar-006_switch_weight_1_5x",
+    "report_path": "/workspace/Pokemon-Battle-Autoresearch/Autoresearch/results/ar-006_switch_weight_1_5x_report.json",
+    "budget": {
+      "max_epochs": 30,
+      "max_minutes": 120
+    },
+    "lineage": {
+      "parent_name": "anchor",
+      "base_config_source": "AR-000"
+    },
+    "start_timestamp": "2026-03-27T20:21:11.438932+00:00"
   }
 ]
