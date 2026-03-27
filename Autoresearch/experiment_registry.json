@@ -568,7 +568,7 @@
     "tier": 2,
     "dataset_version": "gen3ou_50k_v1",
     "tags": [],
-    "status": "running",
+    "status": "completed",
     "config_changes": {
       "amp": "bf16",
       "batch_size": 256,
@@ -611,9 +611,71 @@
       "amp": "bf16",
       "torch_compile": false
     },
-    "metrics": {},
-    "delta_from_parent": {},
-    "decision": null,
+    "metrics": {
+      "test_top1_accuracy": 0.6168,
+      "test_top3_accuracy": 0.884,
+      "test_loss": 1.0898,
+      "test_nll": 1.0897,
+      "test_ece": null,
+      "per_action_accuracy": {
+        "move1": {
+          "accuracy": 0.6973,
+          "count": 14100
+        },
+        "move2": {
+          "accuracy": 0.676,
+          "count": 13977
+        },
+        "move3": {
+          "accuracy": 0.6961,
+          "count": 15118
+        },
+        "move4": {
+          "accuracy": 0.6988,
+          "count": 13274
+        },
+        "switch2": {
+          "accuracy": 0.5503,
+          "count": 7374
+        },
+        "switch3": {
+          "accuracy": 0.4688,
+          "count": 7076
+        },
+        "switch4": {
+          "accuracy": 0.4273,
+          "count": 6534
+        },
+        "switch5": {
+          "accuracy": 0.4468,
+          "count": 5698
+        },
+        "switch6": {
+          "accuracy": 0.4741,
+          "count": 3567
+        }
+      },
+      "move_accuracy": null,
+      "switch_accuracy": null,
+      "move_count": null,
+      "switch_count": null,
+      "best_epoch": 30,
+      "best_val_loss": 1.0947,
+      "wall_time_min": 83.28,
+      "parameter_count": 1717540,
+      "throughput_examples_sec": 5454.1,
+      "gpu_memory_used_gb": 0.054,
+      "peak_ram_gb": 16.208
+    },
+    "delta_from_parent": {
+      "test_top1_accuracy": -0.0153,
+      "test_top3_accuracy": -0.0087,
+      "test_loss": 0.075,
+      "test_nll": 0.0749,
+      "throughput_examples_sec": 3934.1,
+      "wall_time_min": -128.72
+    },
+    "decision": "KILL",
     "notes": "/workspace/Pokemon-Battle-Autoresearch/Autoresearch/notes/ar-006_switch_weight_1_5x.md",
     "timestamp": "2026-03-27T20:21:11.399022+00:00",
     "seed": 42,
@@ -627,6 +689,82 @@
       "parent_name": "anchor",
       "base_config_source": "AR-000"
     },
-    "start_timestamp": "2026-03-27T20:21:11.438932+00:00"
+    "start_timestamp": "2026-03-27T20:21:11.438932+00:00",
+    "return_code": 0,
+    "end_timestamp": "2026-03-27T21:44:28.339017+00:00",
+    "notes_summary": "Switch 1.5x: 61.68% Top-1 (-1.53pp). Move acc 69.2% (-5pp), switch acc 47.6% (+4.8pp). Switch weighting hurts Top-1 at all weights tested."
+  },
+  {
+    "experiment_id": "AR-007",
+    "parent_id": "AR-000",
+    "name": "baseline_a40",
+    "description": "Reproduce anchor config on A40 to establish true baseline",
+    "hypothesis": "All experiments used batch_size=256, anchor used 64. Need to verify if batch size change alone explains the ~1.5pp gap. This baseline establishes the A40 reference point.",
+    "expected_impact": "Should match anchor 63.21% if hardware/bf16 is neutral",
+    "phase": "AR-unassigned",
+    "family": "baseline",
+    "profile": null,
+    "profile_description": null,
+    "tier": 2,
+    "dataset_version": "gen3ou_50k_v1",
+    "tags": [],
+    "status": "running",
+    "config_changes": {
+      "amp": "bf16",
+      "num_workers": 4
+    },
+    "full_config": {
+      "num_layers": 3,
+      "hidden_dim": 224,
+      "num_heads": 4,
+      "ffn_multiplier": 3,
+      "species_embedding_dim": 48,
+      "move_embedding_dim": 24,
+      "item_embedding_dim": 16,
+      "ability_embedding_dim": 16,
+      "type_embedding_dim": 12,
+      "max_window": 2,
+      "dropout": 0.1,
+      "aux_weight": 0.2,
+      "value_weight": 0.1,
+      "switch_weight": 1.0,
+      "label_smoothing": 0.0,
+      "no_value_head": true,
+      "prune_dead_features": true,
+      "batch_size": 64,
+      "epochs": 30,
+      "lr": 0.0001,
+      "weight_decay": 0.01,
+      "warmup_steps": 300,
+      "patience": 7,
+      "grad_accum": 1,
+      "num_battles": 50000,
+      "seed": 42,
+      "data_dir": "data/processed",
+      "num_workers": 4,
+      "prefetch_factor": 4,
+      "persistent_workers": null,
+      "pin_memory": null,
+      "non_blocking_transfer": null,
+      "amp": "bf16",
+      "torch_compile": false
+    },
+    "metrics": {},
+    "delta_from_parent": {},
+    "decision": null,
+    "notes": "/workspace/Pokemon-Battle-Autoresearch/Autoresearch/notes/ar-007_baseline_a40.md",
+    "timestamp": "2026-03-27T23:06:33.736107+00:00",
+    "seed": 42,
+    "checkpoint_path": "/workspace/Pokemon-Battle-Autoresearch/checkpoints/autoresearch_ar-007_baseline_a40",
+    "report_path": "/workspace/Pokemon-Battle-Autoresearch/Autoresearch/results/ar-007_baseline_a40_report.json",
+    "budget": {
+      "max_epochs": 30,
+      "max_minutes": 120
+    },
+    "lineage": {
+      "parent_name": "anchor",
+      "base_config_source": "AR-000"
+    },
+    "start_timestamp": "2026-03-27T23:06:33.757881+00:00"
   }
 ]
