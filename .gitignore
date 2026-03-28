@@ -52,6 +52,13 @@ Thumbs.db
 # AutoResearch experiment outputs (large)
 experiments/*/
 !experiments/.gitkeep
+checkpoints/autoresearch_*/
+data/processed/battles/
+data/processed/metadata.json
+data/processed/perspective_map.json
+data/processed/priors.json
+data/splits/
+data/raw/sampling_manifest.json
 
 # Environment variables
 .env

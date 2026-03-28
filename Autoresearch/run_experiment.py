@@ -68,6 +68,8 @@ DEFAULT_CONFIG: dict[str, Any] = {
     # Objective / optimization
     "aux_weight": 0.2,
     "value_weight": 0.1,
+    "switch_weight": 1.0,
+    "label_smoothing": 0.0,
     "no_value_head": True,
     "prune_dead_features": True,
     "batch_size": 64,
@@ -120,7 +122,7 @@ INT_KEYS = {
     "num_workers",
     "prefetch_factor",
 }
-FLOAT_KEYS = {"dropout", "aux_weight", "value_weight", "lr", "weight_decay"}
+FLOAT_KEYS = {"dropout", "aux_weight", "value_weight", "lr", "weight_decay", "switch_weight", "label_smoothing"}
 STRING_KEYS = {"data_dir", "amp"}
 
 TIER_BUDGETS = {
@@ -345,6 +347,8 @@ def build_train_command(config: dict[str, Any], checkpoint_dir: Path, report_pat
         "--grad-accum", str(config["grad_accum"]),
         "--aux-weight", str(config["aux_weight"]),
         "--value-weight", str(config["value_weight"]),
+        "--switch-weight", str(config["switch_weight"]),
+        "--label-smoothing", str(config["label_smoothing"]),
         "--max-window", str(config["max_window"]),
         "--seed", str(config["seed"]),
         "--amp", str(config["amp"]),
