@@ -95,9 +95,18 @@ Every experiment must follow this cycle:
 
 | Tier | Max Epochs | Max Wall Time | Purpose |
 |------|-----------|---------------|---------|
-| 1 | 5–10 | 30 min | Quick triage — kill bad ideas fast |
+| 1 | 3–5 | 15 min | Quick triage — kill bad ideas fast |
 | 2 | 20–30 | 2 hours | Confirmation — validate promising results |
 | 3 | 30–50 | 4 hours | Full promotion — final training with multi-seed |
+
+### Tier 1 Experiment Design
+
+Tier 1 experiments must fit within 15 minutes. To achieve this:
+- Always use `batch_size=256` and `amp=bf16` for maximum throughput
+- Optionally reduce `num_battles` (e.g. 25K instead of 50K) if the experiment would otherwise timeout
+- Keep epochs at 3–5; early stopping will terminate sooner if the idea is clearly bad
+- The goal is **signal detection**, not final accuracy — if an idea shows improvement over the anchor at this budget, promote it to Tier 2 for full validation
+- A Tier 1 result that is worse than the anchor at 5 epochs is a strong signal to kill the idea
 
 ## Promotion Rules
 
@@ -137,18 +146,21 @@ If `run_experiment.py` or training crashes:
    - Move on to the next hypothesis
 4. **NEVER** spend more than 10 minutes debugging a single crash
 
-## Sleep/Wake Cycle During Training
+## Running Training Commands
 
-When an experiment is running (training subprocess active), you MUST use 5-minute sleep/wake cycles to avoid context timeout:
+Training and evaluation commands can exceed the Bash tool's 10-minute timeout. To handle this:
 
-1. Launch the training subprocess via `run_experiment.py`
-2. Sleep for 5 minutes (`sleep 300`)
-3. Wake up — check if the process is still running (`ps` or check for output file)
-4. If still running: print a brief status update, then sleep another 5 minutes
-5. If finished: read the training report, evaluate results, continue the experiment loop
+1. **Launch training with `run_in_background=true`** on the Bash tool call. This runs the command as a background process with no timeout limit. You will be automatically notified when the command completes.
+2. **Use 5-minute sleep/wake cycles** while waiting for the background command:
+   - Sleep for 5 minutes (`sleep 300`)
+   - Wake up — print a brief status update (e.g. check training log tail, GPU usage)
+   - If the background command hasn't completed yet, sleep another 5 minutes
+   - When notified that the command completed, read the training report and continue
+3. **While waiting**, you may do lightweight tasks: update experiment notes, plan the next hypothesis, review the leaderboard.
 
-This prevents your session from timing out during long Tier 2/3 experiments (up to 4 hours).
-Do NOT launch training and wait silently — the session will disconnect. Always cycle.
+This approach prevents both (a) Bash timeout killing long commands and (b) session disconnection from inactivity during long Tier 2/3 experiments.
+
+**Important:** Do NOT use the default Bash timeout for training commands — they will be killed after 2 minutes. Always use `run_in_background=true`.
 
 ## Experiment Priority Queue
 
@@ -199,7 +211,7 @@ Your mission is to push the Top-1 action prediction accuracy of the BattleTransf
 
 If you run out of ideas, think harder. Re-read the model architecture in `battle_transformer.py` — is there a structural bottleneck? Re-read the loss computation — is signal being wasted? Look at the per-action accuracy breakdown — which actions are consistently mispredicted and why? Combine two near-misses from previous experiments. Try something radical: a hierarchical action head, attention over the action space, a completely different embedding scheme. Read the competitive battle strategy guide in `docs/` for domain insight.
 
-As an example use case: a user might launch you on a RunPod A40 instance and leave you running overnight. With Tier 1 experiments taking ~30 minutes each, you can run approximately 16 experiments in 8 hours — a full research sprint. The user wakes up to a populated leaderboard, detailed experiment notes, and a new champion checkpoint, all produced by you while they slept. That is the power of autonomous research.
+As an example use case: a user might launch you on a RunPod A40 instance and leave you running overnight. With Tier 1 experiments taking ~15 minutes each, you can run approximately 32 experiments in 8 hours — a full research sprint. The user wakes up to a populated leaderboard, detailed experiment notes, and a new champion checkpoint, all produced by you while they slept. That is the power of autonomous research.
 
 Follow the experiment loop protocol religiously:
 1. READ the leaderboard — know where you stand
@@ -260,6 +272,32 @@ Always run tests after modifying model or data code. Never commit code that brea
 - Spikes only — no Stealth Rock, Toxic Spikes, or Sticky Web
 - No pivot moves — no U-turn, Volt Switch, Flip Turn
 - No Choice Scarf/Specs — only Choice Band exists
+
+## Timing Reference (A40 GPU, batch=256, amp=bf16)
+
+Use these estimates to plan experiments that fit within tier budgets:
+
+| Dataset | Window | Epochs | Approx. Wall Time | Fits Tier |
+|---------|--------|--------|--------------------|-----------|
+| 25K battles | 2 | 5 | ~7 min | 1 |
+| 50K battles | 2 | 5 | ~14 min | 1 |
+| 50K battles | 2 | 30 | ~85 min | 2 |
+| 50K battles | 5 | 30 | ~85 min | 2 |
+| 100K battles | 2 | 30 | ~170 min | 3 |
+
+These are rough estimates — actual times vary with architecture size and GPU load. When in doubt, start with a smaller dataset or fewer epochs for Tier 1.
+
+## Academic Literature
+
+The `academic_literature/` folder contains research papers and academic resources provided by the human. When forming hypotheses or exploring new techniques, **check this folder first** for relevant papers on topics such as:
+
+- Imitation learning and behavioral cloning
+- Transformer architectures for sequential decision-making
+- Game-playing AI and action prediction
+- Loss engineering, curriculum learning, and training techniques
+- Attention mechanisms and embedding strategies
+
+Read any papers in this folder before designing experiments that relate to their topics. The human will add papers here when they find relevant research — treat them as high-priority reading material that may contain ideas worth testing.
 
 ## Tech Stack
 

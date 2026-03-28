@@ -126,7 +126,7 @@ FLOAT_KEYS = {"dropout", "aux_weight", "value_weight", "lr", "weight_decay", "sw
 STRING_KEYS = {"data_dir", "amp"}
 
 TIER_BUDGETS = {
-    1: {"max_epochs": 10, "max_minutes": 30},
+    1: {"max_epochs": 5, "max_minutes": 15},
     2: {"max_epochs": 30, "max_minutes": 120},
     3: {"max_epochs": 50, "max_minutes": 240},
 }
