@@ -56,6 +56,7 @@ An automated research harness for perfecting Phase 4 (BattleTransformer imitatio
 - `Autoresearch/configs/` — experiment YAML configs
 - `Autoresearch/notes/` — per-experiment analysis notes
 - `Autoresearch/results/` — evaluation output JSONs
+- `important_fixes/` — high-priority bug reports with detailed fix instructions (check before starting experiments)
 
 ## Approved Edit Surface
 
@@ -117,7 +118,9 @@ A candidate replaces the champion ONLY if:
 
 ## Known Issues to Fix First
 
-1. **Auxiliary speed/role heads show 0% accuracy** — this is a bug, not a tuning issue. Debug `src/data/auxiliary_labels.py` and `compute_total_loss()` before running aux-head experiments.
+**Before starting the experiment loop**, check `important_fixes/` for detailed bug reports with root cause analysis and step-by-step fix instructions. If any fix is marked HIGH priority, implement it before running experiments that depend on the affected component. Otherwise, continue with the experiment priority queue.
+
+1. **Auxiliary speed/role heads show 0% accuracy** — this is a bug, not a tuning issue. See `important_fixes/001_auxiliary_head_missing_targets.md` for the full root cause trace and fix. Must be resolved before any aux-head weight sweep experiments.
 2. **Switch prediction is 37–48% vs 72–75% for moves** — closing this gap is the highest-value lever for overall accuracy.
 3. **Calibration shows systematic overconfidence in the 0.4–0.8 range**.
 
