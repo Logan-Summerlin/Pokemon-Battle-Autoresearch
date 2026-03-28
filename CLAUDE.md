@@ -291,6 +291,7 @@ These are rough estimates — actual times vary with architecture size and GPU l
 
 The `academic_literature/` folder contains research papers and academic resources provided by the human. When forming hypotheses or exploring new techniques, **check this folder first** for relevant papers on topics such as:
 
+- Tuning hyperparameters
 - Imitation learning and behavioral cloning
 - Transformer architectures for sequential decision-making
 - Game-playing AI and action prediction
