@@ -2043,7 +2043,7 @@
     "tier": 2,
     "dataset_version": "gen3ou_50k_v1",
     "tags": [],
-    "status": "running",
+    "status": "completed",
     "config_changes": {
       "amp": "bf16",
       "batch_size": 256,
@@ -2089,8 +2089,70 @@
       "amp": "bf16",
       "torch_compile": false
     },
-    "metrics": {},
-    "delta_from_parent": {},
+    "metrics": {
+      "test_top1_accuracy": 0.6663,
+      "test_top3_accuracy": 0.9262,
+      "test_loss": 0.8946,
+      "test_nll": 0.8944,
+      "test_ece": null,
+      "per_action_accuracy": {
+        "move1": {
+          "accuracy": 0.7446,
+          "count": 14100
+        },
+        "move2": {
+          "accuracy": 0.7282,
+          "count": 13977
+        },
+        "move3": {
+          "accuracy": 0.7639,
+          "count": 15118
+        },
+        "move4": {
+          "accuracy": 0.7499,
+          "count": 13274
+        },
+        "switch2": {
+          "accuracy": 0.5617,
+          "count": 7374
+        },
+        "switch3": {
+          "accuracy": 0.5215,
+          "count": 7076
+        },
+        "switch4": {
+          "accuracy": 0.4875,
+          "count": 6534
+        },
+        "switch5": {
+          "accuracy": 0.4996,
+          "count": 5698
+        },
+        "switch6": {
+          "accuracy": 0.4872,
+          "count": 3567
+        }
+      },
+      "move_accuracy": null,
+      "switch_accuracy": null,
+      "move_count": null,
+      "switch_count": null,
+      "best_epoch": 19,
+      "best_val_loss": 0.9013,
+      "wall_time_min": 78.52,
+      "parameter_count": 2070556,
+      "throughput_examples_sec": 4663.5,
+      "gpu_memory_used_gb": 0.062,
+      "peak_ram_gb": 16.301
+    },
+    "delta_from_parent": {
+      "test_top1_accuracy": 0.0342,
+      "test_top3_accuracy": 0.0335,
+      "test_loss": -0.1202,
+      "test_nll": -0.1204,
+      "throughput_examples_sec": 3143.5,
+      "wall_time_min": -133.48
+    },
     "decision": null,
     "notes": "/workspace/Pokemon-Battle-Autoresearch/Autoresearch/notes/ar-018_t2_candidate_head.md",
     "timestamp": "2026-03-29T20:29:52.642111+00:00",
@@ -2105,6 +2167,8 @@
       "parent_name": "anchor",
       "base_config_source": "AR-000"
     },
-    "start_timestamp": "2026-03-29T20:29:52.662691+00:00"
+    "start_timestamp": "2026-03-29T20:29:52.662691+00:00",
+    "return_code": 0,
+    "end_timestamp": "2026-03-29T21:48:24.025682+00:00"
   }
 ]
