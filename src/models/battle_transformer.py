@@ -87,6 +87,9 @@ class TransformerConfig:
     switch_weight: float = 1.0  # Upweight switch actions in policy loss (1.0 = no upweighting)
     label_smoothing: float = 0.0  # Label smoothing for policy loss
 
+    # Policy head type
+    use_candidate_head: bool = False  # Use candidate-conditioned policy head instead of pooled MLP
+
     # Value head
     use_value_head: bool = True
     value_loss_weight: float = 0.1
@@ -636,6 +639,122 @@ class PolicyHead(nn.Module):
         return self.mlp(pooled)
 
 
+class CandidateConditionedPolicyHead(nn.Module):
+    """Candidate-conditioned action scorer using cross-attention.
+
+    Instead of mean-pooling to 9 fixed logits, this head:
+    1. Builds candidate embeddings for each legal action
+       - Move candidates: active pokemon token + move slot embedding
+       - Switch candidates: bench pokemon token (the actual switch target)
+    2. Each candidate queries the encoder memory via cross-attention
+    3. A small MLP scores each attended representation to produce one logit
+
+    This lets the model reason about *actual* move/switch targets rather
+    than abstract slot IDs, which is especially important for switches
+    where slot 3 can contain completely different pokemon across battles.
+    """
+
+    def __init__(self, config: TransformerConfig) -> None:
+        super().__init__()
+        h = config.hidden_dim
+
+        # Move candidate: combine active pokemon token with move slot embedding
+        # We use a learned embedding per move slot (0-3) to distinguish which move
+        self.move_slot_emb = nn.Embedding(4, h)
+        self.move_combine = nn.Sequential(
+            nn.Linear(2 * h, h),
+            nn.GELU(),
+            nn.LayerNorm(h),
+        )
+
+        # Switch candidate: bench pokemon token is already a good representation
+        # but we add a learned "switch intent" projection to distinguish from encoding
+        self.switch_proj = nn.Sequential(
+            nn.Linear(h, h),
+            nn.GELU(),
+            nn.LayerNorm(h),
+        )
+
+        # Cross-attention: candidate queries attend over encoder memory
+        self.cross_attn = nn.MultiheadAttention(
+            embed_dim=h,
+            num_heads=config.num_heads,
+            dropout=config.dropout,
+            batch_first=True,
+        )
+        self.cross_norm = nn.LayerNorm(h)
+
+        # Score MLP: attended representation -> scalar logit
+        self.score_mlp = nn.Sequential(
+            nn.Linear(h, h),
+            nn.GELU(),
+            nn.Dropout(config.dropout),
+            nn.Linear(h, 1),
+        )
+
+    def forward(
+        self,
+        last_step_tokens: torch.Tensor,
+        encoder_memory: torch.Tensor,
+        memory_mask: torch.Tensor | None = None,
+    ) -> torch.Tensor:
+        """Score candidate actions against encoded battle state.
+
+        Args:
+            last_step_tokens: (batch, TOKENS_PER_STEP, hidden_dim)
+                Token layout: [own0..own5, opp0..opp5, field, context]
+                own0 = active pokemon, own1..own5 = bench slots
+            encoder_memory: (batch, total_tokens, hidden_dim)
+                Full encoder output (all turns) for cross-attention
+            memory_mask: (batch, total_tokens) True = padded/masked
+
+        Returns:
+            (batch, NUM_ACTIONS) raw logits (before legal masking)
+        """
+        batch_size = last_step_tokens.shape[0]
+        h = last_step_tokens.shape[-1]
+        device = last_step_tokens.device
+
+        # Extract key tokens from last step
+        active_token = last_step_tokens[:, 0, :]  # (batch, h) - active pokemon
+        bench_tokens = last_step_tokens[:, 1:6, :]  # (batch, 5, h) - bench slots 1-5
+
+        # --- Build move candidates (actions 0-3) ---
+        # Each move candidate = combine(active_pokemon, move_slot_embedding)
+        move_slot_ids = torch.arange(4, device=device)  # [0, 1, 2, 3]
+        move_slot_embs = self.move_slot_emb(move_slot_ids)  # (4, h)
+        move_slot_embs = move_slot_embs.unsqueeze(0).expand(batch_size, -1, -1)  # (batch, 4, h)
+
+        active_expanded = active_token.unsqueeze(1).expand(-1, 4, -1)  # (batch, 4, h)
+        move_candidates = self.move_combine(
+            torch.cat([active_expanded, move_slot_embs], dim=-1)
+        )  # (batch, 4, h)
+
+        # --- Build switch candidates (actions 4-8) ---
+        # Each switch candidate = project(bench_pokemon_token)
+        switch_candidates = self.switch_proj(bench_tokens)  # (batch, 5, h)
+
+        # --- Combine all candidates ---
+        all_candidates = torch.cat([move_candidates, switch_candidates], dim=1)  # (batch, 9, h)
+
+        # --- Cross-attention: candidates query the encoder memory ---
+        # Convert memory_mask for MultiheadAttention (True = ignore)
+        attn_out, _ = self.cross_attn(
+            query=all_candidates,
+            key=encoder_memory,
+            value=encoder_memory,
+            key_padding_mask=memory_mask,
+        )  # (batch, 9, h)
+
+        # Residual + norm
+        scored = self.cross_norm(all_candidates + attn_out)  # (batch, 9, h)
+
+        # --- Score each candidate ---
+        logits = self.score_mlp(scored).squeeze(-1)  # (batch, 9)
+
+        return logits
+
+
 class AuxiliaryHead(nn.Module):
     """Predicts hidden opponent information from encoder output.
 
@@ -760,7 +879,10 @@ class BattleTransformer(nn.Module):
         super().__init__()
         self.config = config
         self.encoder = BattleTransformerEncoder(config)
-        self.policy_head = PolicyHead(config)
+        if config.use_candidate_head:
+            self.policy_head = CandidateConditionedPolicyHead(config)
+        else:
+            self.policy_head = PolicyHead(config)
         self.auxiliary_head = AuxiliaryHead(config)
 
         self.value_head: ValueHead | None = None
@@ -861,7 +983,12 @@ class BattleTransformer(nn.Module):
             attn_mask = None
 
         # Policy head on last-step tokens
-        policy_logits = self.policy_head(last_step_tokens)
+        if self.config.use_candidate_head:
+            policy_logits = self.policy_head(
+                last_step_tokens, encoder_out, memory_mask=attn_mask
+            )
+        else:
+            policy_logits = self.policy_head(last_step_tokens)
 
         # Apply legal mask
         if legal_mask is not None:
