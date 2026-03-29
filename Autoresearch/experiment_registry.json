@@ -1813,5 +1813,146 @@
     "start_timestamp": "2026-03-29T11:25:50.538201+00:00",
     "return_code": 0,
     "end_timestamp": "2026-03-29T11:37:06.476361+00:00"
+  },
+  {
+    "experiment_id": "AR-016",
+    "parent_id": "AR-000",
+    "name": "t2_deep_5L",
+    "description": "Deep architecture: 5L/224d/4H (same width as anchor, more depth)",
+    "hypothesis": "More depth adds representational capacity through more processing steps. Same width means less parameter growth than wider model.",
+    "expected_impact": "Top-1 62-64%",
+    "phase": "AR-unassigned",
+    "family": "architecture",
+    "profile": null,
+    "profile_description": null,
+    "tier": 2,
+    "dataset_version": "gen3ou_50k_v1",
+    "tags": [],
+    "status": "completed",
+    "config_changes": {
+      "amp": "bf16",
+      "batch_size": 256,
+      "lr": 0.0004,
+      "num_layers": 5,
+      "num_workers": 4,
+      "warmup_steps": 75
+    },
+    "full_config": {
+      "num_layers": 5,
+      "hidden_dim": 224,
+      "num_heads": 4,
+      "ffn_multiplier": 3,
+      "species_embedding_dim": 48,
+      "move_embedding_dim": 24,
+      "item_embedding_dim": 16,
+      "ability_embedding_dim": 16,
+      "type_embedding_dim": 12,
+      "max_window": 2,
+      "dropout": 0.1,
+      "aux_weight": 0.2,
+      "value_weight": 0.1,
+      "switch_weight": 1.0,
+      "label_smoothing": 0.0,
+      "no_value_head": true,
+      "prune_dead_features": true,
+      "batch_size": 256,
+      "epochs": 30,
+      "lr": 0.0004,
+      "weight_decay": 0.01,
+      "warmup_steps": 75,
+      "patience": 7,
+      "grad_accum": 1,
+      "num_battles": 50000,
+      "seed": 42,
+      "data_dir": "data/processed",
+      "num_workers": 4,
+      "prefetch_factor": 4,
+      "persistent_workers": null,
+      "pin_memory": null,
+      "non_blocking_transfer": null,
+      "amp": "bf16",
+      "torch_compile": false
+    },
+    "metrics": {
+      "test_top1_accuracy": 0.6357,
+      "test_top3_accuracy": 0.8911,
+      "test_loss": 1.0213,
+      "test_nll": 1.021,
+      "test_ece": null,
+      "per_action_accuracy": {
+        "move1": {
+          "accuracy": 0.746,
+          "count": 14100
+        },
+        "move2": {
+          "accuracy": 0.7358,
+          "count": 13977
+        },
+        "move3": {
+          "accuracy": 0.7495,
+          "count": 15118
+        },
+        "move4": {
+          "accuracy": 0.7577,
+          "count": 13274
+        },
+        "switch2": {
+          "accuracy": 0.5239,
+          "count": 7374
+        },
+        "switch3": {
+          "accuracy": 0.4293,
+          "count": 7076
+        },
+        "switch4": {
+          "accuracy": 0.365,
+          "count": 6534
+        },
+        "switch5": {
+          "accuracy": 0.3719,
+          "count": 5698
+        },
+        "switch6": {
+          "accuracy": 0.4292,
+          "count": 3567
+        }
+      },
+      "move_accuracy": null,
+      "switch_accuracy": null,
+      "move_count": null,
+      "switch_count": null,
+      "best_epoch": 20,
+      "best_val_loss": 1.0277,
+      "wall_time_min": 83.68,
+      "parameter_count": 2726436,
+      "throughput_examples_sec": 4415.9,
+      "gpu_memory_used_gb": 0.077,
+      "peak_ram_gb": 16.401
+    },
+    "delta_from_parent": {
+      "test_top1_accuracy": 0.0036,
+      "test_top3_accuracy": -0.0016,
+      "test_loss": 0.0065,
+      "test_nll": 0.0062,
+      "throughput_examples_sec": 2895.9,
+      "wall_time_min": -128.32
+    },
+    "decision": null,
+    "notes": "/workspace/Pokemon-Battle-Autoresearch/Autoresearch/notes/ar-016_t2_deep_5l.md",
+    "timestamp": "2026-03-29T16:36:47.689402+00:00",
+    "seed": 42,
+    "checkpoint_path": "/workspace/Pokemon-Battle-Autoresearch/checkpoints/autoresearch_ar-016_t2_deep_5l",
+    "report_path": "/workspace/Pokemon-Battle-Autoresearch/Autoresearch/results/ar-016_t2_deep_5l_report.json",
+    "budget": {
+      "max_epochs": 30,
+      "max_minutes": 120
+    },
+    "lineage": {
+      "parent_name": "anchor",
+      "base_config_source": "AR-000"
+    },
+    "start_timestamp": "2026-03-29T16:36:47.732829+00:00",
+    "return_code": 0,
+    "end_timestamp": "2026-03-29T18:00:28.423924+00:00"
   }
 ]
