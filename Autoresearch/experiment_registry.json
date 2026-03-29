@@ -1541,5 +1541,141 @@
     "start_timestamp": "2026-03-29T10:17:51.958681+00:00",
     "return_code": 0,
     "end_timestamp": "2026-03-29T10:29:12.528678+00:00"
+  },
+  {
+    "experiment_id": "AR-014",
+    "parent_id": "AR-010",
+    "name": "t1_seed_123",
+    "description": "Different seed (123) to measure Tier 1 variance",
+    "hypothesis": "Measure how much of Tier 1 results are noise vs signal. If variance is >1pp, many previous 'signals' are noise.",
+    "expected_impact": "Variance estimation",
+    "phase": "AR-unassigned",
+    "family": "baseline",
+    "profile": null,
+    "profile_description": null,
+    "tier": 1,
+    "dataset_version": "gen3ou_50k_v1",
+    "tags": [],
+    "status": "completed",
+    "config_changes": {
+      "seed": 123
+    },
+    "full_config": {
+      "num_layers": 3,
+      "hidden_dim": 224,
+      "num_heads": 4,
+      "ffn_multiplier": 3,
+      "species_embedding_dim": 48,
+      "move_embedding_dim": 24,
+      "item_embedding_dim": 16,
+      "ability_embedding_dim": 16,
+      "type_embedding_dim": 12,
+      "max_window": 2,
+      "dropout": 0.1,
+      "aux_weight": 0.2,
+      "value_weight": 0.1,
+      "switch_weight": 1.0,
+      "label_smoothing": 0.0,
+      "no_value_head": true,
+      "prune_dead_features": true,
+      "batch_size": 256,
+      "epochs": 5,
+      "lr": 0.0004,
+      "weight_decay": 0.01,
+      "warmup_steps": 75,
+      "patience": 7,
+      "grad_accum": 1,
+      "num_battles": 25000,
+      "seed": 123,
+      "data_dir": "data/processed",
+      "num_workers": 4,
+      "prefetch_factor": 4,
+      "persistent_workers": null,
+      "pin_memory": null,
+      "non_blocking_transfer": null,
+      "amp": "bf16",
+      "torch_compile": false
+    },
+    "metrics": {
+      "test_top1_accuracy": 0.4974,
+      "test_top3_accuracy": 0.7702,
+      "test_loss": 1.326,
+      "test_nll": 1.3242,
+      "test_ece": null,
+      "per_action_accuracy": {
+        "move1": {
+          "accuracy": 0.7287,
+          "count": 6785
+        },
+        "move2": {
+          "accuracy": 0.7035,
+          "count": 6974
+        },
+        "move3": {
+          "accuracy": 0.7145,
+          "count": 7665
+        },
+        "move4": {
+          "accuracy": 0.684,
+          "count": 6630
+        },
+        "switch2": {
+          "accuracy": 0.2015,
+          "count": 3713
+        },
+        "switch3": {
+          "accuracy": 0.1153,
+          "count": 3659
+        },
+        "switch4": {
+          "accuracy": 0.0678,
+          "count": 3349
+        },
+        "switch5": {
+          "accuracy": 0.0807,
+          "count": 2762
+        },
+        "switch6": {
+          "accuracy": 0.0159,
+          "count": 1703
+        }
+      },
+      "move_accuracy": null,
+      "switch_accuracy": null,
+      "move_count": null,
+      "switch_count": null,
+      "best_epoch": 5,
+      "best_val_loss": 1.322,
+      "wall_time_min": 11.27,
+      "parameter_count": 1717540,
+      "throughput_examples_sec": 5246.5,
+      "gpu_memory_used_gb": 0.054,
+      "peak_ram_gb": 14.515
+    },
+    "delta_from_parent": {
+      "test_top1_accuracy": -0.0039,
+      "test_top3_accuracy": -0.008,
+      "test_loss": 0.0208,
+      "test_nll": 0.0198,
+      "throughput_examples_sec": 135.4,
+      "wall_time_min": -0.38
+    },
+    "decision": null,
+    "notes": "/workspace/Pokemon-Battle-Autoresearch/Autoresearch/notes/ar-014_t1_seed_123.md",
+    "timestamp": "2026-03-29T10:44:23.169136+00:00",
+    "seed": 123,
+    "checkpoint_path": "/workspace/Pokemon-Battle-Autoresearch/checkpoints/autoresearch_ar-014_t1_seed_123",
+    "report_path": "/workspace/Pokemon-Battle-Autoresearch/Autoresearch/results/ar-014_t1_seed_123_report.json",
+    "budget": {
+      "max_epochs": 5,
+      "max_minutes": 15
+    },
+    "lineage": {
+      "parent_name": "t1_baseline",
+      "base_config_source": "AR-010"
+    },
+    "start_timestamp": "2026-03-29T10:44:23.186603+00:00",
+    "return_code": 0,
+    "end_timestamp": "2026-03-29T10:55:39.229779+00:00"
   }
 ]
