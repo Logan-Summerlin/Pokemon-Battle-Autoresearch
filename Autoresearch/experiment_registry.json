@@ -990,5 +990,147 @@
     "return_code": -15,
     "end_timestamp": "2026-03-28T03:52:56.181418+00:00",
     "notes_summary": "DIVERGED: loss=inf at epoch 2. LR 4e-4 + label_smoothing 0.05 is unstable. Label smoothing needs lower LR."
+  },
+  {
+    "experiment_id": "AR-010",
+    "parent_id": "AR-000",
+    "name": "t1_baseline",
+    "description": "Tier 1 baseline: batch=256, LR=4e-4, 25K battles, 5 epochs. Reference for all Tier 1 experiments.",
+    "hypothesis": "Establish fast baseline for Tier 1 comparisons. All Tier 1 experiments will be compared against this.",
+    "expected_impact": "Reference accuracy for Tier 1 budget",
+    "phase": "AR-unassigned",
+    "family": "baseline",
+    "profile": null,
+    "profile_description": null,
+    "tier": 1,
+    "dataset_version": "gen3ou_50k_v1",
+    "tags": [],
+    "status": "completed",
+    "config_changes": {
+      "amp": "bf16",
+      "batch_size": 256,
+      "epochs": 5,
+      "lr": 0.0004,
+      "num_battles": 25000,
+      "num_workers": 4,
+      "warmup_steps": 75
+    },
+    "full_config": {
+      "num_layers": 3,
+      "hidden_dim": 224,
+      "num_heads": 4,
+      "ffn_multiplier": 3,
+      "species_embedding_dim": 48,
+      "move_embedding_dim": 24,
+      "item_embedding_dim": 16,
+      "ability_embedding_dim": 16,
+      "type_embedding_dim": 12,
+      "max_window": 2,
+      "dropout": 0.1,
+      "aux_weight": 0.2,
+      "value_weight": 0.1,
+      "switch_weight": 1.0,
+      "label_smoothing": 0.0,
+      "no_value_head": true,
+      "prune_dead_features": true,
+      "batch_size": 256,
+      "epochs": 5,
+      "lr": 0.0004,
+      "weight_decay": 0.01,
+      "warmup_steps": 75,
+      "patience": 7,
+      "grad_accum": 1,
+      "num_battles": 25000,
+      "seed": 42,
+      "data_dir": "data/processed",
+      "num_workers": 4,
+      "prefetch_factor": 4,
+      "persistent_workers": null,
+      "pin_memory": null,
+      "non_blocking_transfer": null,
+      "amp": "bf16",
+      "torch_compile": false
+    },
+    "metrics": {
+      "test_top1_accuracy": 0.5013,
+      "test_top3_accuracy": 0.7782,
+      "test_loss": 1.3052,
+      "test_nll": 1.3044,
+      "test_ece": null,
+      "per_action_accuracy": {
+        "move1": {
+          "accuracy": 0.7187,
+          "count": 6751
+        },
+        "move2": {
+          "accuracy": 0.6941,
+          "count": 6960
+        },
+        "move3": {
+          "accuracy": 0.7015,
+          "count": 7715
+        },
+        "move4": {
+          "accuracy": 0.7192,
+          "count": 6570
+        },
+        "switch2": {
+          "accuracy": 0.2326,
+          "count": 3719
+        },
+        "switch3": {
+          "accuracy": 0.1216,
+          "count": 3529
+        },
+        "switch4": {
+          "accuracy": 0.0678,
+          "count": 3350
+        },
+        "switch5": {
+          "accuracy": 0.0741,
+          "count": 2766
+        },
+        "switch6": {
+          "accuracy": 0.0312,
+          "count": 1732
+        }
+      },
+      "move_accuracy": null,
+      "switch_accuracy": null,
+      "move_count": null,
+      "switch_count": null,
+      "best_epoch": 5,
+      "best_val_loss": 1.3195,
+      "wall_time_min": 11.65,
+      "parameter_count": 1717540,
+      "throughput_examples_sec": 5111.1,
+      "gpu_memory_used_gb": 0.054,
+      "peak_ram_gb": 14.637
+    },
+    "delta_from_parent": {
+      "test_top1_accuracy": -0.1308,
+      "test_top3_accuracy": -0.1145,
+      "test_loss": 0.2904,
+      "test_nll": 0.2896,
+      "throughput_examples_sec": 3591.1,
+      "wall_time_min": -200.35
+    },
+    "decision": null,
+    "notes": "/workspace/Pokemon-Battle-Autoresearch/Autoresearch/notes/ar-010_t1_baseline.md",
+    "timestamp": "2026-03-29T05:24:25.332668+00:00",
+    "seed": 42,
+    "checkpoint_path": "/workspace/Pokemon-Battle-Autoresearch/checkpoints/autoresearch_ar-010_t1_baseline",
+    "report_path": "/workspace/Pokemon-Battle-Autoresearch/Autoresearch/results/ar-010_t1_baseline_report.json",
+    "budget": {
+      "max_epochs": 5,
+      "max_minutes": 15
+    },
+    "lineage": {
+      "parent_name": "anchor",
+      "base_config_source": "AR-000"
+    },
+    "start_timestamp": "2026-03-29T05:24:25.351959+00:00",
+    "return_code": 0,
+    "end_timestamp": "2026-03-29T05:36:04.564349+00:00"
   }
 ]
