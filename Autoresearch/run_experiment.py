@@ -72,6 +72,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "label_smoothing": 0.0,
     "no_value_head": True,
     "candidate_head": False,
+    "split_head": False,
     "prune_dead_features": True,
     "batch_size": 64,
     "epochs": 30,
@@ -97,6 +98,7 @@ ALLOWED_CONFIG_KEYS = set(DEFAULT_CONFIG)
 BOOL_KEYS = {
     "no_value_head",
     "candidate_head",
+    "split_head",
     "prune_dead_features",
     "persistent_workers",
     "pin_memory",
@@ -365,6 +367,8 @@ def build_train_command(config: dict[str, Any], checkpoint_dir: Path, report_pat
         cmd.append("--no-value-head")
     if config.get("candidate_head"):
         cmd.append("--candidate-head")
+    if config.get("split_head"):
+        cmd.append("--split-head")
     if config.get("prune_dead_features"):
         cmd.append("--prune-dead-features")
     if config.get("torch_compile"):

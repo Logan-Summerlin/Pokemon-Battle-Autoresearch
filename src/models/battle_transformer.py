@@ -89,6 +89,7 @@ class TransformerConfig:
 
     # Policy head type
     use_candidate_head: bool = False  # Use candidate-conditioned policy head instead of pooled MLP
+    use_split_head: bool = False  # Use separate move/switch scoring pathways
 
     # Value head
     use_value_head: bool = True
@@ -755,6 +756,103 @@ class CandidateConditionedPolicyHead(nn.Module):
         return logits
 
 
+class SplitMoveSwitchPolicyHead(nn.Module):
+    """Separate move and switch scoring pathways with shared encoder.
+
+    Splits the policy into two specialized branches:
+    - MoveHead: scores up to 4 move candidates using active pokemon + move slot embeddings
+    - SwitchHead: scores up to 5 switch candidates using bench pokemon tokens
+
+    Each head uses its own cross-attention over the shared encoder memory,
+    allowing moves and switches to attend to different battle-state features.
+    Final output concatenates move scores (0-3) and switch scores (4-8) into
+    the standard 9-action logit vector.
+    """
+
+    def __init__(self, config: TransformerConfig) -> None:
+        super().__init__()
+        h = config.hidden_dim
+
+        # ── Move pathway ──
+        self.move_slot_emb = nn.Embedding(4, h)
+        self.move_combine = nn.Sequential(
+            nn.Linear(2 * h, h), nn.GELU(), nn.LayerNorm(h),
+        )
+        self.move_cross_attn = nn.MultiheadAttention(
+            embed_dim=h, num_heads=config.num_heads,
+            dropout=config.dropout, batch_first=True,
+        )
+        self.move_cross_norm = nn.LayerNorm(h)
+        self.move_scorer = nn.Sequential(
+            nn.Linear(h, h), nn.GELU(), nn.Dropout(config.dropout), nn.Linear(h, 1),
+        )
+
+        # ── Switch pathway ──
+        self.switch_proj = nn.Sequential(
+            nn.Linear(h, h), nn.GELU(), nn.LayerNorm(h),
+        )
+        self.switch_cross_attn = nn.MultiheadAttention(
+            embed_dim=h, num_heads=config.num_heads,
+            dropout=config.dropout, batch_first=True,
+        )
+        self.switch_cross_norm = nn.LayerNorm(h)
+        self.switch_scorer = nn.Sequential(
+            nn.Linear(h, h), nn.GELU(), nn.Dropout(config.dropout), nn.Linear(h, 1),
+        )
+
+    def forward(
+        self,
+        last_step_tokens: torch.Tensor,
+        encoder_memory: torch.Tensor,
+        memory_mask: torch.Tensor | None = None,
+    ) -> torch.Tensor:
+        """Score move and switch candidates through separate pathways.
+
+        Args:
+            last_step_tokens: (batch, TOKENS_PER_STEP, hidden_dim)
+                Token layout: [own0..own5, opp0..opp5, field, context]
+                own0 = active pokemon, own1..own5 = bench slots
+            encoder_memory: (batch, total_tokens, hidden_dim)
+            memory_mask: (batch, total_tokens) True = padded/masked
+
+        Returns:
+            (batch, NUM_ACTIONS) raw logits [move0..move3, switch2..switch6]
+        """
+        batch_size = last_step_tokens.shape[0]
+        device = last_step_tokens.device
+
+        active_token = last_step_tokens[:, 0, :]   # (batch, h)
+        bench_tokens = last_step_tokens[:, 1:6, :]  # (batch, 5, h)
+
+        # ── Move scoring ──
+        move_slot_ids = torch.arange(4, device=device)
+        move_slot_embs = self.move_slot_emb(move_slot_ids).unsqueeze(0).expand(batch_size, -1, -1)
+        active_expanded = active_token.unsqueeze(1).expand(-1, 4, -1)
+        move_candidates = self.move_combine(
+            torch.cat([active_expanded, move_slot_embs], dim=-1)
+        )  # (batch, 4, h)
+
+        move_attn_out, _ = self.move_cross_attn(
+            query=move_candidates, key=encoder_memory, value=encoder_memory,
+            key_padding_mask=memory_mask,
+        )
+        move_scored = self.move_cross_norm(move_candidates + move_attn_out)
+        move_logits = self.move_scorer(move_scored).squeeze(-1)  # (batch, 4)
+
+        # ── Switch scoring ──
+        switch_candidates = self.switch_proj(bench_tokens)  # (batch, 5, h)
+
+        switch_attn_out, _ = self.switch_cross_attn(
+            query=switch_candidates, key=encoder_memory, value=encoder_memory,
+            key_padding_mask=memory_mask,
+        )
+        switch_scored = self.switch_cross_norm(switch_candidates + switch_attn_out)
+        switch_logits = self.switch_scorer(switch_scored).squeeze(-1)  # (batch, 5)
+
+        # ── Combine into 9-action logits ──
+        return torch.cat([move_logits, switch_logits], dim=1)  # (batch, 9)
+
+
 class AuxiliaryHead(nn.Module):
     """Predicts hidden opponent information from encoder output.
 
@@ -879,7 +977,9 @@ class BattleTransformer(nn.Module):
         super().__init__()
         self.config = config
         self.encoder = BattleTransformerEncoder(config)
-        if config.use_candidate_head:
+        if config.use_split_head:
+            self.policy_head = SplitMoveSwitchPolicyHead(config)
+        elif config.use_candidate_head:
             self.policy_head = CandidateConditionedPolicyHead(config)
         else:
             self.policy_head = PolicyHead(config)
@@ -983,7 +1083,7 @@ class BattleTransformer(nn.Module):
             attn_mask = None
 
         # Policy head on last-step tokens
-        if self.config.use_candidate_head:
+        if self.config.use_split_head or self.config.use_candidate_head:
             policy_logits = self.policy_head(
                 last_step_tokens, encoder_out, memory_mask=attn_mask
             )
