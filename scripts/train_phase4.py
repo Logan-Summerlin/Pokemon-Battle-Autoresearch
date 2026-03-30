@@ -152,16 +152,29 @@ class WindowedTurnDataset(Dataset):
 
     For a battle with L turns and window size W, this produces L examples
     (with shorter windows for early turns).
+
+    When shuffle_moves=True, each battle gets a random permutation of its 4
+    move slots. This permutation is applied consistently across all turns in
+    the battle, preventing the model from memorizing slot positions instead
+    of learning move identities.
     """
+
+    # Move slot indices in the pokemon feature vector (categorical features 1-4)
+    _MOVE_FEAT_START = 1
+    _MOVE_FEAT_END = 5  # exclusive
+    _NUM_MOVE_SLOTS = 4
 
     def __init__(
         self,
         battles: list[dict[str, np.ndarray]],
         max_window: int = 20,
+        shuffle_moves: bool = False,
     ) -> None:
         self.max_window = max_window
+        self.shuffle_moves = shuffle_moves
         self.examples: list[tuple[int, int]] = []
         self.battles: list[dict[str, torch.Tensor]] = []
+        self._move_perms: list[torch.Tensor | None] = []
 
         for b_idx, battle in enumerate(battles):
             tensor_battle = {
@@ -176,6 +189,12 @@ class WindowedTurnDataset(Dataset):
             }
             self.battles.append(tensor_battle)
 
+            # Generate one random move permutation per battle
+            if shuffle_moves:
+                self._move_perms.append(torch.randperm(self._NUM_MOVE_SLOTS))
+            else:
+                self._move_perms.append(None)
+
             seq_len = int(battle.get("seq_len", battle["action"].shape[0]))
             for t in range(seq_len):
                 action = int(tensor_battle["action"][t])
@@ -185,6 +204,46 @@ class WindowedTurnDataset(Dataset):
     def __len__(self) -> int:
         return len(self.examples)
 
+    def _apply_move_shuffle(
+        self,
+        own_team: torch.Tensor,
+        legal_mask: torch.Tensor,
+        action: torch.Tensor,
+        perm: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Apply move slot permutation to a window of turns.
+
+        Args:
+            own_team: (seq, 6, 28) own team features
+            legal_mask: (seq, 9) legal action mask
+            action: scalar action label
+            perm: (4,) permutation of [0,1,2,3]
+
+        Returns:
+            Shuffled (own_team, legal_mask, action)
+        """
+        own_team = own_team.clone()
+        legal_mask = legal_mask.clone()
+        action = action.clone()
+
+        # Shuffle move IDs in the active pokemon (slot 0) across all turns
+        # Feature indices 1-4 are the 4 move IDs
+        s, e = self._MOVE_FEAT_START, self._MOVE_FEAT_END
+        own_team[:, 0, s:e] = own_team[:, 0, s:e][:, perm]
+
+        # Shuffle the move entries (indices 0-3) in the legal mask
+        legal_mask[:, :self._NUM_MOVE_SLOTS] = legal_mask[:, :self._NUM_MOVE_SLOTS][:, perm]
+
+        # Remap the action label if it's a move action (0-3)
+        act_val = action.item()
+        if 0 <= act_val < self._NUM_MOVE_SLOTS:
+            # Find where the original slot ended up after permutation
+            # perm[new_pos] = old_pos, so we need: new_pos where perm[new_pos] == act_val
+            new_pos = (perm == act_val).nonzero(as_tuple=True)[0].item()
+            action = torch.tensor(new_pos, dtype=action.dtype)
+
+        return own_team, legal_mask, action
+
     def __getitem__(self, idx: int) -> dict[str, torch.Tensor]:
         b_idx, t_idx = self.examples[idx]
         battle = self.battles[b_idx]
@@ -193,13 +252,23 @@ class WindowedTurnDataset(Dataset):
         end = t_idx + 1
         actual_len = end - start
 
+        own_team = battle["own_team"][start:end]
+        legal_mask = battle["legal_mask"][start:end]
+        action = battle["action"][t_idx]
+
+        perm = self._move_perms[b_idx]
+        if perm is not None:
+            own_team, legal_mask, action = self._apply_move_shuffle(
+                own_team, legal_mask, action, perm,
+            )
+
         return {
-            "own_team": battle["own_team"][start:end],
+            "own_team": own_team,
             "opponent_team": battle["opponent_team"][start:end],
             "field": battle["field"][start:end],
             "context": battle["context"][start:end],
-            "legal_mask": battle["legal_mask"][start:end],
-            "action": battle["action"][t_idx],
+            "legal_mask": legal_mask,
+            "action": action,
             "game_result": battle["game_result"][t_idx],
             "seq_len": torch.tensor(actual_len, dtype=torch.long),
             "item_targets": battle["item_targets"][t_idx],
@@ -737,6 +806,8 @@ def main() -> None:
                        help="Use separate move/switch scoring pathways")
     parser.add_argument("--move-identity", action="store_true",
                        help="Use actual move ID embeddings instead of slot embeddings for move candidates")
+    parser.add_argument("--shuffle-moves", action="store_true",
+                       help="Randomly shuffle move slot order per battle to prevent slot memorization")
     parser.add_argument("--switch-weight", type=float, default=1.0,
                        help="Upweight switch actions in policy loss (1.0 = uniform, 2.0 = 2x switch weight)")
     parser.add_argument("--label-smoothing", type=float, default=0.0,
@@ -936,8 +1007,8 @@ def main() -> None:
     val_seqs = add_auxiliary_labels(val_seqs)
     test_seqs = add_auxiliary_labels(test_seqs)
 
-    # Create windowed datasets
-    train_dataset = WindowedTurnDataset(train_seqs, max_window=args.max_window)
+    # Create windowed datasets (shuffle moves only for training, not val)
+    train_dataset = WindowedTurnDataset(train_seqs, max_window=args.max_window, shuffle_moves=args.shuffle_moves)
     val_dataset = WindowedTurnDataset(val_seqs, max_window=args.max_window)
     logger.info(f"Train examples: {len(train_dataset)}, Val examples: {len(val_dataset)}")
 
@@ -1020,6 +1091,7 @@ def main() -> None:
         "candidate_head": args.candidate_head,
         "split_head": args.split_head,
         "move_identity": args.move_identity,
+        "shuffle_moves": args.shuffle_moves,
     }
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr,

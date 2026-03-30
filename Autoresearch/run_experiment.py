@@ -74,6 +74,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "candidate_head": False,
     "split_head": False,
     "move_identity": False,
+    "shuffle_moves": False,
     "prune_dead_features": True,
     "batch_size": 64,
     "epochs": 30,
@@ -101,6 +102,7 @@ BOOL_KEYS = {
     "candidate_head",
     "split_head",
     "move_identity",
+    "shuffle_moves",
     "prune_dead_features",
     "persistent_workers",
     "pin_memory",
@@ -373,6 +375,8 @@ def build_train_command(config: dict[str, Any], checkpoint_dir: Path, report_pat
         cmd.append("--split-head")
     if config.get("move_identity"):
         cmd.append("--move-identity")
+    if config.get("shuffle_moves"):
+        cmd.append("--shuffle-moves")
     if config.get("prune_dead_features"):
         cmd.append("--prune-dead-features")
     if config.get("torch_compile"):
