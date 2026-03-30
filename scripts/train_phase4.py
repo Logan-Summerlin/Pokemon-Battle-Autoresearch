@@ -808,6 +808,8 @@ def main() -> None:
                        help="Use actual move ID embeddings instead of slot embeddings for move candidates")
     parser.add_argument("--shuffle-moves", action="store_true",
                        help="Randomly shuffle move slot order per battle to prevent slot memorization")
+    parser.add_argument("--cosine-epochs", type=int, default=None,
+                       help="Epoch count for cosine LR schedule (default: same as --epochs). Set higher to slow LR decay.")
     parser.add_argument("--switch-weight", type=float, default=1.0,
                        help="Upweight switch actions in policy loss (1.0 = uniform, 2.0 = 2x switch weight)")
     parser.add_argument("--label-smoothing", type=float, default=0.0,
@@ -1092,11 +1094,13 @@ def main() -> None:
         "split_head": args.split_head,
         "move_identity": args.move_identity,
         "shuffle_moves": args.shuffle_moves,
+        "cosine_epochs": cosine_epochs,
     }
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr,
                                    weight_decay=args.weight_decay, betas=(0.9, 0.999))
-    total_steps = args.epochs * len(train_loader) // args.grad_accum
+    cosine_epochs = args.cosine_epochs if args.cosine_epochs is not None else args.epochs
+    total_steps = cosine_epochs * len(train_loader) // args.grad_accum
     scheduler = WarmupCosineScheduler(optimizer, warmup_steps=args.warmup_steps,
                                        total_steps=total_steps)
 

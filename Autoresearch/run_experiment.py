@@ -75,6 +75,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "split_head": False,
     "move_identity": False,
     "shuffle_moves": False,
+    "cosine_epochs": None,
     "prune_dead_features": True,
     "batch_size": 64,
     "epochs": 30,
@@ -129,6 +130,7 @@ INT_KEYS = {
     "seed",
     "num_workers",
     "prefetch_factor",
+    "cosine_epochs",
 }
 FLOAT_KEYS = {"dropout", "aux_weight", "value_weight", "lr", "weight_decay", "switch_weight", "label_smoothing"}
 STRING_KEYS = {"data_dir", "amp"}
@@ -377,6 +379,8 @@ def build_train_command(config: dict[str, Any], checkpoint_dir: Path, report_pat
         cmd.append("--move-identity")
     if config.get("shuffle_moves"):
         cmd.append("--shuffle-moves")
+    if config.get("cosine_epochs") is not None:
+        cmd.extend(["--cosine-epochs", str(config["cosine_epochs"])])
     if config.get("prune_dead_features"):
         cmd.append("--prune-dead-features")
     if config.get("torch_compile"):
