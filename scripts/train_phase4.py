@@ -735,6 +735,8 @@ def main() -> None:
                        help="Use candidate-conditioned policy head instead of pooled MLP")
     parser.add_argument("--split-head", action="store_true",
                        help="Use separate move/switch scoring pathways")
+    parser.add_argument("--move-identity", action="store_true",
+                       help="Use actual move ID embeddings instead of slot embeddings for move candidates")
     parser.add_argument("--switch-weight", type=float, default=1.0,
                        help="Upweight switch actions in policy loss (1.0 = uniform, 2.0 = 2x switch weight)")
     parser.add_argument("--label-smoothing", type=float, default=0.0,
@@ -979,6 +981,7 @@ def main() -> None:
         label_smoothing=args.label_smoothing,
         use_candidate_head=args.candidate_head,
         use_split_head=args.split_head,
+        move_identity_candidates=args.move_identity,
     )
     model = BattleTransformer(config).to(device)
     param_count = model.count_parameters()
@@ -1016,6 +1019,7 @@ def main() -> None:
         "torch_compile": args.torch_compile,
         "candidate_head": args.candidate_head,
         "split_head": args.split_head,
+        "move_identity": args.move_identity,
     }
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr,

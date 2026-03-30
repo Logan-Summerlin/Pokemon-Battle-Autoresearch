@@ -90,6 +90,7 @@ class TransformerConfig:
     # Policy head type
     use_candidate_head: bool = False  # Use candidate-conditioned policy head instead of pooled MLP
     use_split_head: bool = False  # Use separate move/switch scoring pathways
+    move_identity_candidates: bool = False  # Use actual move IDs instead of slot embeddings for move candidates
 
     # Value head
     use_value_head: bool = True
@@ -760,21 +761,35 @@ class SplitMoveSwitchPolicyHead(nn.Module):
     """Separate move and switch scoring pathways with shared encoder.
 
     Splits the policy into two specialized branches:
-    - MoveHead: scores up to 4 move candidates using active pokemon + move slot embeddings
+    - MoveHead: scores up to 4 move candidates using active pokemon + move embeddings
     - SwitchHead: scores up to 5 switch candidates using bench pokemon tokens
 
     Each head uses its own cross-attention over the shared encoder memory,
     allowing moves and switches to attend to different battle-state features.
     Final output concatenates move scores (0-3) and switch scores (4-8) into
     the standard 9-action logit vector.
+
+    When move_identity_candidates=True, move candidates use the actual move ID
+    embedding (e.g. "Recover", "Ice Punch") instead of abstract slot position
+    embeddings (move1, move2, move3, move4).
     """
 
-    def __init__(self, config: TransformerConfig) -> None:
+    def __init__(
+        self,
+        config: TransformerConfig,
+        move_embedding: nn.Embedding | None = None,
+    ) -> None:
         super().__init__()
         h = config.hidden_dim
+        self.use_move_identity = config.move_identity_candidates
 
         # ── Move pathway ──
-        self.move_slot_emb = nn.Embedding(4, h)
+        if self.use_move_identity:
+            # Project move identity embedding (move_embedding_dim) up to hidden_dim
+            self.move_id_proj = nn.Linear(config.move_embedding_dim, h)
+            self.move_emb = move_embedding  # shared with encoder
+        else:
+            self.move_slot_emb = nn.Embedding(4, h)
         self.move_combine = nn.Sequential(
             nn.Linear(2 * h, h), nn.GELU(), nn.LayerNorm(h),
         )
@@ -805,6 +820,7 @@ class SplitMoveSwitchPolicyHead(nn.Module):
         last_step_tokens: torch.Tensor,
         encoder_memory: torch.Tensor,
         memory_mask: torch.Tensor | None = None,
+        active_move_ids: torch.Tensor | None = None,
     ) -> torch.Tensor:
         """Score move and switch candidates through separate pathways.
 
@@ -814,6 +830,8 @@ class SplitMoveSwitchPolicyHead(nn.Module):
                 own0 = active pokemon, own1..own5 = bench slots
             encoder_memory: (batch, total_tokens, hidden_dim)
             memory_mask: (batch, total_tokens) True = padded/masked
+            active_move_ids: (batch, 4) actual move IDs for the active pokemon
+                Only used when move_identity_candidates=True
 
         Returns:
             (batch, NUM_ACTIONS) raw logits [move0..move3, switch2..switch6]
@@ -825,11 +843,17 @@ class SplitMoveSwitchPolicyHead(nn.Module):
         bench_tokens = last_step_tokens[:, 1:6, :]  # (batch, 5, h)
 
         # ── Move scoring ──
-        move_slot_ids = torch.arange(4, device=device)
-        move_slot_embs = self.move_slot_emb(move_slot_ids).unsqueeze(0).expand(batch_size, -1, -1)
-        active_expanded = active_token.unsqueeze(1).expand(-1, 4, -1)
+        active_expanded = active_token.unsqueeze(1).expand(-1, 4, -1)  # (batch, 4, h)
+        if self.use_move_identity and active_move_ids is not None:
+            # Use actual move identity embeddings
+            move_embs = self.move_emb(active_move_ids)  # (batch, 4, move_emb_dim)
+            move_embs = self.move_id_proj(move_embs)  # (batch, 4, h)
+        else:
+            # Fall back to abstract slot embeddings
+            move_slot_ids = torch.arange(4, device=device)
+            move_embs = self.move_slot_emb(move_slot_ids).unsqueeze(0).expand(batch_size, -1, -1)
         move_candidates = self.move_combine(
-            torch.cat([active_expanded, move_slot_embs], dim=-1)
+            torch.cat([active_expanded, move_embs], dim=-1)
         )  # (batch, 4, h)
 
         move_attn_out, _ = self.move_cross_attn(
@@ -978,7 +1002,9 @@ class BattleTransformer(nn.Module):
         self.config = config
         self.encoder = BattleTransformerEncoder(config)
         if config.use_split_head:
-            self.policy_head = SplitMoveSwitchPolicyHead(config)
+            self.policy_head = SplitMoveSwitchPolicyHead(
+                config, move_embedding=self.encoder.shared_move_emb,
+            )
         elif config.use_candidate_head:
             self.policy_head = CandidateConditionedPolicyHead(config)
         else:
@@ -1082,10 +1108,28 @@ class BattleTransformer(nn.Module):
             last_step_tokens = encoder_out
             attn_mask = None
 
+        # Extract active pokemon's move IDs for move-identity candidates
+        active_move_ids = None
+        if self.config.move_identity_candidates and self.config.use_split_head:
+            # Active pokemon raw features: own_team slot 0, categorical indices 1-4
+            if is_sequence:
+                # Get last valid step's own_team
+                # last_step: (batch,) index of last valid step
+                active_raw = torch.gather(
+                    own_team[:, :, 0, :],  # (batch, seq, feat_dim) for slot 0
+                    dim=1,
+                    index=last_step.unsqueeze(1).unsqueeze(2).expand(-1, 1, own_team.shape[-1]),
+                ).squeeze(1)  # (batch, feat_dim)
+            else:
+                active_raw = own_team[:, 0, :]  # (batch, feat_dim)
+            # Move IDs are categorical indices 1-4
+            active_move_ids = active_raw[:, 1:5].long().clamp(min=0)  # (batch, 4)
+
         # Policy head on last-step tokens
         if self.config.use_split_head or self.config.use_candidate_head:
             policy_logits = self.policy_head(
-                last_step_tokens, encoder_out, memory_mask=attn_mask
+                last_step_tokens, encoder_out, memory_mask=attn_mask,
+                **({"active_move_ids": active_move_ids} if self.config.use_split_head else {}),
             )
         else:
             policy_logits = self.policy_head(last_step_tokens)
