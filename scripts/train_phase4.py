@@ -1094,7 +1094,7 @@ def main() -> None:
         "split_head": args.split_head,
         "move_identity": args.move_identity,
         "shuffle_moves": args.shuffle_moves,
-        "cosine_epochs": cosine_epochs,
+        "cosine_epochs": args.cosine_epochs if args.cosine_epochs is not None else args.epochs,
     }
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr,
