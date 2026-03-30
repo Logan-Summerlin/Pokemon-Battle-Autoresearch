@@ -2170,5 +2170,144 @@
     "start_timestamp": "2026-03-29T20:29:52.662691+00:00",
     "return_code": 0,
     "end_timestamp": "2026-03-29T21:48:24.025682+00:00"
+  },
+  {
+    "experiment_id": "AR-019",
+    "parent_id": "AR-018",
+    "name": "t2_split_head",
+    "description": "Split policy head with separate cross-attention for moves and switches",
+    "hypothesis": "Separate move/switch scoring pathways reduce interference between action types, improving switch accuracy without hurting moves",
+    "expected_impact": "Improve switch accuracy; maintain or improve Top-1 over candidate head (66.63%)",
+    "phase": "AR-unassigned",
+    "family": "architecture",
+    "profile": null,
+    "profile_description": null,
+    "tier": 2,
+    "dataset_version": "gen3ou_50k_v1",
+    "tags": [],
+    "status": "completed",
+    "config_changes": {
+      "candidate_head": false,
+      "split_head": true
+    },
+    "full_config": {
+      "num_layers": 3,
+      "hidden_dim": 224,
+      "num_heads": 4,
+      "ffn_multiplier": 3,
+      "species_embedding_dim": 48,
+      "move_embedding_dim": 24,
+      "item_embedding_dim": 16,
+      "ability_embedding_dim": 16,
+      "type_embedding_dim": 12,
+      "max_window": 2,
+      "dropout": 0.1,
+      "aux_weight": 0.2,
+      "value_weight": 0.1,
+      "switch_weight": 1.0,
+      "label_smoothing": 0.0,
+      "no_value_head": true,
+      "candidate_head": false,
+      "split_head": true,
+      "prune_dead_features": true,
+      "batch_size": 256,
+      "epochs": 30,
+      "lr": 0.0004,
+      "weight_decay": 0.01,
+      "warmup_steps": 75,
+      "patience": 7,
+      "grad_accum": 1,
+      "num_battles": 50000,
+      "seed": 42,
+      "data_dir": "data/processed",
+      "num_workers": 4,
+      "prefetch_factor": 4,
+      "persistent_workers": null,
+      "pin_memory": null,
+      "non_blocking_transfer": null,
+      "amp": "bf16",
+      "torch_compile": false
+    },
+    "metrics": {
+      "test_top1_accuracy": 0.6741,
+      "test_top3_accuracy": 0.9288,
+      "test_loss": 0.8877,
+      "test_nll": 0.8875,
+      "test_ece": null,
+      "per_action_accuracy": {
+        "move1": {
+          "accuracy": 0.7428,
+          "count": 14100
+        },
+        "move2": {
+          "accuracy": 0.7467,
+          "count": 13977
+        },
+        "move3": {
+          "accuracy": 0.7638,
+          "count": 15118
+        },
+        "move4": {
+          "accuracy": 0.7652,
+          "count": 13274
+        },
+        "switch2": {
+          "accuracy": 0.5587,
+          "count": 7374
+        },
+        "switch3": {
+          "accuracy": 0.5216,
+          "count": 7076
+        },
+        "switch4": {
+          "accuracy": 0.509,
+          "count": 6534
+        },
+        "switch5": {
+          "accuracy": 0.51,
+          "count": 5698
+        },
+        "switch6": {
+          "accuracy": 0.5046,
+          "count": 3567
+        }
+      },
+      "move_accuracy": null,
+      "switch_accuracy": null,
+      "move_count": null,
+      "switch_count": null,
+      "best_epoch": 22,
+      "best_val_loss": 0.8887,
+      "wall_time_min": 89.37,
+      "parameter_count": 2323229,
+      "throughput_examples_sec": 4370.5,
+      "gpu_memory_used_gb": 0.068,
+      "peak_ram_gb": 16.267
+    },
+    "delta_from_parent": {
+      "test_top1_accuracy": 0.0078,
+      "test_top3_accuracy": 0.0026,
+      "test_loss": -0.0069,
+      "test_nll": -0.0069,
+      "throughput_examples_sec": -293.0,
+      "wall_time_min": 10.85
+    },
+    "decision": null,
+    "notes": "/workspace/Pokemon-Battle-Autoresearch/Autoresearch/notes/ar-019_t2_split_head.md",
+    "timestamp": "2026-03-29T22:50:07.660922+00:00",
+    "seed": 42,
+    "checkpoint_path": "/workspace/Pokemon-Battle-Autoresearch/checkpoints/autoresearch_ar-019_t2_split_head",
+    "report_path": "/workspace/Pokemon-Battle-Autoresearch/Autoresearch/results/ar-019_t2_split_head_report.json",
+    "budget": {
+      "max_epochs": 30,
+      "max_minutes": 120
+    },
+    "lineage": {
+      "parent_name": "t2_candidate_head",
+      "base_config_source": "AR-018"
+    },
+    "start_timestamp": "2026-03-29T22:50:07.682576+00:00",
+    "return_code": 0,
+    "end_timestamp": "2026-03-30T00:19:30.032627+00:00"
   }
 ]
