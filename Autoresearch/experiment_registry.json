@@ -3599,5 +3599,146 @@
     "start_timestamp": "2026-03-31T15:44:19.484856+00:00",
     "return_code": 0,
     "end_timestamp": "2026-03-31T16:53:01.526792+00:00"
+  },
+  {
+    "experiment_id": "AR-030",
+    "parent_id": "AR-027",
+    "name": "t2_5L320d_wide_scaleup",
+    "description": "",
+    "hypothesis": "Width scale-up 256\u2192320 with proven 5L/FFN3x config. Both move_emb=48 and FFN 4x failed, so keeping defaults and testing pure width increase.",
+    "expected_impact": "",
+    "phase": "AR-unassigned",
+    "family": "custom",
+    "profile": null,
+    "profile_description": null,
+    "tier": 2,
+    "dataset_version": "gen3ou_50k_v1",
+    "tags": [],
+    "status": "completed",
+    "config_changes": {
+      "hidden_dim": 320
+    },
+    "full_config": {
+      "num_layers": 5,
+      "hidden_dim": 320,
+      "num_heads": 4,
+      "ffn_multiplier": 3,
+      "species_embedding_dim": 48,
+      "move_embedding_dim": 24,
+      "item_embedding_dim": 16,
+      "ability_embedding_dim": 16,
+      "type_embedding_dim": 12,
+      "max_window": 2,
+      "dropout": 0.1,
+      "aux_weight": 0.2,
+      "value_weight": 0.1,
+      "switch_weight": 1.0,
+      "label_smoothing": 0.0,
+      "no_value_head": true,
+      "candidate_head": false,
+      "split_head": true,
+      "move_identity": true,
+      "shuffle_moves": true,
+      "cosine_epochs": 80,
+      "prune_dead_features": true,
+      "batch_size": 1024,
+      "epochs": 40,
+      "lr": 0.0004,
+      "weight_decay": 0.01,
+      "warmup_steps": 300,
+      "patience": 10,
+      "grad_accum": 1,
+      "num_battles": 100000,
+      "seed": 42,
+      "data_dir": "data/processed",
+      "num_workers": 4,
+      "prefetch_factor": 4,
+      "persistent_workers": null,
+      "pin_memory": null,
+      "non_blocking_transfer": null,
+      "amp": "bf16",
+      "torch_compile": false
+    },
+    "metrics": {
+      "test_top1_accuracy": 0.5815,
+      "test_top3_accuracy": 0.8749,
+      "test_loss": 1.074,
+      "test_nll": 1.0738,
+      "test_ece": null,
+      "per_action_accuracy": {
+        "move1": {
+          "accuracy": 0.624,
+          "count": 27468
+        },
+        "move2": {
+          "accuracy": 0.5677,
+          "count": 28627
+        },
+        "move3": {
+          "accuracy": 0.5463,
+          "count": 30375
+        },
+        "move4": {
+          "accuracy": 0.55,
+          "count": 26494
+        },
+        "switch2": {
+          "accuracy": 0.6337,
+          "count": 14866
+        },
+        "switch3": {
+          "accuracy": 0.6142,
+          "count": 14038
+        },
+        "switch4": {
+          "accuracy": 0.5944,
+          "count": 13007
+        },
+        "switch5": {
+          "accuracy": 0.5706,
+          "count": 10981
+        },
+        "switch6": {
+          "accuracy": 0.5603,
+          "count": 6930
+        }
+      },
+      "move_accuracy": null,
+      "switch_accuracy": null,
+      "move_count": null,
+      "switch_count": null,
+      "best_epoch": 16,
+      "best_val_loss": 1.072,
+      "wall_time_min": 70.85,
+      "parameter_count": 6721021,
+      "throughput_examples_sec": 13325.9,
+      "gpu_memory_used_gb": 0.17,
+      "peak_ram_gb": 22.184
+    },
+    "delta_from_parent": {
+      "test_top1_accuracy": -0.0048,
+      "test_top3_accuracy": -0.0021,
+      "test_loss": 0.002,
+      "test_nll": 0.002,
+      "throughput_examples_sec": -1678.3,
+      "wall_time_min": -2.1
+    },
+    "decision": null,
+    "notes": "/workspace/Pokemon-Battle-Autoresearch/Autoresearch/notes/ar-030_t2_5l320d_wide_scaleup.md",
+    "timestamp": "2026-03-31T16:55:15.586231+00:00",
+    "seed": 42,
+    "checkpoint_path": "/workspace/Pokemon-Battle-Autoresearch/checkpoints/autoresearch_ar-030_t2_5l320d_wide_scaleup",
+    "report_path": "/workspace/Pokemon-Battle-Autoresearch/Autoresearch/results/ar-030_t2_5l320d_wide_scaleup_report.json",
+    "budget": {
+      "max_epochs": 40,
+      "max_minutes": 120
+    },
+    "lineage": {
+      "parent_name": "t2_5L256d_lr4e4_warmup300",
+      "base_config_source": "AR-027"
+    },
+    "start_timestamp": "2026-03-31T16:55:15.629462+00:00",
+    "return_code": 0,
+    "end_timestamp": "2026-03-31T18:06:06.395721+00:00"
   }
 ]
