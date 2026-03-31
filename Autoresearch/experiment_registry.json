@@ -3332,7 +3332,7 @@
     "tier": 2,
     "dataset_version": "gen3ou_50k_v1",
     "tags": [],
-    "status": "running",
+    "status": "completed",
     "config_changes": {
       "move_embedding_dim": 48
     },
@@ -3377,8 +3377,70 @@
       "amp": "bf16",
       "torch_compile": false
     },
-    "metrics": {},
-    "delta_from_parent": {},
+    "metrics": {
+      "test_top1_accuracy": 0.5872,
+      "test_top3_accuracy": 0.8776,
+      "test_loss": 1.0739,
+      "test_nll": 1.0736,
+      "test_ece": null,
+      "per_action_accuracy": {
+        "move1": {
+          "accuracy": 0.6129,
+          "count": 27468
+        },
+        "move2": {
+          "accuracy": 0.5871,
+          "count": 28627
+        },
+        "move3": {
+          "accuracy": 0.5591,
+          "count": 30375
+        },
+        "move4": {
+          "accuracy": 0.5737,
+          "count": 26494
+        },
+        "switch2": {
+          "accuracy": 0.6282,
+          "count": 14866
+        },
+        "switch3": {
+          "accuracy": 0.6029,
+          "count": 14038
+        },
+        "switch4": {
+          "accuracy": 0.5833,
+          "count": 13007
+        },
+        "switch5": {
+          "accuracy": 0.5814,
+          "count": 10981
+        },
+        "switch6": {
+          "accuracy": 0.5587,
+          "count": 6930
+        }
+      },
+      "move_accuracy": null,
+      "switch_accuracy": null,
+      "move_count": null,
+      "switch_count": null,
+      "best_epoch": 19,
+      "best_val_loss": 1.074,
+      "wall_time_min": 70.1,
+      "parameter_count": 4384629,
+      "throughput_examples_sec": 14930.6,
+      "gpu_memory_used_gb": 0.114,
+      "peak_ram_gb": 21.36
+    },
+    "delta_from_parent": {
+      "test_top1_accuracy": 0.0009,
+      "test_top3_accuracy": 0.0006,
+      "test_loss": 0.0019,
+      "test_nll": 0.0018,
+      "throughput_examples_sec": -73.6,
+      "wall_time_min": -2.85
+    },
     "decision": null,
     "notes": "/workspace/Pokemon-Battle-Autoresearch/Autoresearch/notes/ar-028_t2_5l256d_moveemb48.md",
     "timestamp": "2026-03-31T14:27:51.333446+00:00",
@@ -3393,6 +3455,8 @@
       "parent_name": "t2_5L256d_lr4e4_warmup300",
       "base_config_source": "AR-027"
     },
-    "start_timestamp": "2026-03-31T14:27:51.355288+00:00"
+    "start_timestamp": "2026-03-31T14:27:51.355288+00:00",
+    "return_code": 0,
+    "end_timestamp": "2026-03-31T15:37:57.231400+00:00"
   }
 ]
