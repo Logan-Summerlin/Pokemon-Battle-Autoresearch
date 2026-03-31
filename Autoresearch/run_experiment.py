@@ -95,6 +95,8 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "non_blocking_transfer": None,
     "amp": "auto",
     "torch_compile": False,
+    "battle_manifest": None,
+    "resume_from": None,
 }
 
 ALLOWED_CONFIG_KEYS = set(DEFAULT_CONFIG)
@@ -133,7 +135,7 @@ INT_KEYS = {
     "cosine_epochs",
 }
 FLOAT_KEYS = {"dropout", "aux_weight", "value_weight", "lr", "weight_decay", "switch_weight", "label_smoothing"}
-STRING_KEYS = {"data_dir", "amp"}
+STRING_KEYS = {"data_dir", "amp", "battle_manifest", "resume_from"}
 
 TIER_BUDGETS = {
     1: {"max_epochs": 5, "max_minutes": 15},
@@ -399,6 +401,10 @@ def build_train_command(config: dict[str, Any], checkpoint_dir: Path, report_pat
         cmd.append("--non-blocking-transfer")
     elif config.get("non_blocking_transfer") is False:
         cmd.append("--blocking-transfer")
+    if config.get("battle_manifest") is not None:
+        cmd.extend(["--battle-manifest", str(config["battle_manifest"])])
+    if config.get("resume_from") is not None:
+        cmd.extend(["--resume-from", str(config["resume_from"])])
 
     return cmd
 

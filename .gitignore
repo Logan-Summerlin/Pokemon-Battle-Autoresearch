@@ -59,6 +59,7 @@ data/processed/perspective_map.json
 data/processed/priors.json
 data/splits/
 data/raw/sampling_manifest.json
+data/curriculum/
 
 # Environment variables
 .env

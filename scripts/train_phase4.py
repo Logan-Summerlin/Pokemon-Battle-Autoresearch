@@ -552,13 +552,33 @@ def validate(
 # ── Data loading ─────────────────────────────────────────────────────────
 
 
-def load_all_battles(data_dir, max_battles=None):
-    """Load all valid battles from processed data directory."""
+def load_all_battles(data_dir, max_battles=None, battle_manifest=None):
+    """Load all valid battles from processed data directory.
+
+    Args:
+        data_dir: Path to processed data directory (contains battles/ and vocabs/).
+        max_battles: Maximum number of battles to load (ignored if manifest provided).
+        battle_manifest: Path to a JSON manifest file listing specific battle files to load.
+            If provided, only battles listed in the manifest are loaded, and max_battles
+            is ignored. The manifest should have a "files" key with a list of npz filenames.
+    """
     battles_dir = Path(data_dir) / "battles"
     vocabs = BattleVocabularies.load(Path(data_dir) / "vocabs")
-    npz_files = sorted(battles_dir.glob("*.npz"))
-    if max_battles is not None:
-        npz_files = npz_files[:max_battles]
+
+    if battle_manifest is not None:
+        import json as _json
+        with open(battle_manifest) as f:
+            manifest = _json.load(f)
+        manifest_files = manifest["files"]
+        npz_files = [battles_dir / fname for fname in manifest_files]
+        logger.info(
+            f"Loading from manifest: {battle_manifest} "
+            f"({len(npz_files)} files, stage={manifest.get('stage', '?')})"
+        )
+    else:
+        npz_files = sorted(battles_dir.glob("*.npz"))
+        if max_battles is not None:
+            npz_files = npz_files[:max_battles]
 
     sequences, skipped = [], 0
     for npz_file in npz_files:
@@ -780,6 +800,8 @@ def main() -> None:
     parser.add_argument("--mode", choices=["smoke", "small", "full"], default="full")
     parser.add_argument("--data-dir", type=str, default="data/processed")
     parser.add_argument("--num-battles", type=int, default=None)
+    parser.add_argument("--battle-manifest", type=str, default=None,
+                        help="Path to curriculum manifest JSON (overrides --num-battles)")
     parser.add_argument("--hidden-dim", type=int, default=None)
     parser.add_argument("--num-layers", type=int, default=None)
     parser.add_argument("--num-heads", type=int, default=None)
@@ -817,6 +839,8 @@ def main() -> None:
     parser.add_argument("--max-window", type=int, default=20)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--checkpoint-dir", type=str, default=None)
+    parser.add_argument("--resume-from", type=str, default=None,
+                        help="Path to checkpoint to resume from (loads model weights only, resets optimizer/scheduler)")
     parser.add_argument("--report-path", type=str, default=None)
     parser.add_argument(
         "--num-workers",
@@ -993,7 +1017,10 @@ def main() -> None:
     data_dir = Path(args.data_dir)
     logger.info(f"Loading data from {data_dir}...")
     load_start = time.time()
-    sequences, vocabs = load_all_battles(data_dir, max_battles=args.num_battles)
+    sequences, vocabs = load_all_battles(
+        data_dir, max_battles=args.num_battles,
+        battle_manifest=args.battle_manifest,
+    )
     load_time = time.time() - load_start
     snap = get_resource_snapshot()
     logger.info(f"Data loaded in {load_time:.1f}s, RAM: {snap['ram_used_gb']:.2f} GB")
@@ -1057,6 +1084,16 @@ def main() -> None:
         move_identity_candidates=args.move_identity,
     )
     model = BattleTransformer(config).to(device)
+
+    # Resume from checkpoint (model weights only — optimizer/scheduler reset for new stage)
+    if args.resume_from:
+        resume_path = Path(args.resume_from)
+        if resume_path.is_dir():
+            resume_path = resume_path / "best_model.pt"
+        ckpt = torch.load(str(resume_path), map_location=device, weights_only=False)
+        model.load_state_dict(ckpt["model_state_dict"])
+        logger.info(f"Resumed model weights from {resume_path} (epoch {ckpt.get('epoch', '?')})")
+
     param_count = model.count_parameters()
     if args.torch_compile:
         model = torch.compile(model)
