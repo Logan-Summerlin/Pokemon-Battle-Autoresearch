@@ -3030,5 +3030,369 @@
     "start_timestamp": "2026-03-30T22:17:51.964767+00:00",
     "return_code": 0,
     "end_timestamp": "2026-03-30T23:37:43.887644+00:00"
+  },
+  {
+    "experiment_id": "AR-026",
+    "parent_id": "AR-025",
+    "name": "t2_5L256d_shuffle_identity_100k",
+    "description": "",
+    "hypothesis": "Scaling from 3L/224d to 5L/256d increases model capacity to learn 325 distinct move patterns with move-identity",
+    "expected_impact": "",
+    "phase": "AR-unassigned",
+    "family": "custom",
+    "profile": null,
+    "profile_description": null,
+    "tier": 2,
+    "dataset_version": "gen3ou_50k_v1",
+    "tags": [],
+    "status": "completed",
+    "config_changes": {
+      "hidden_dim": 256,
+      "num_layers": 5
+    },
+    "full_config": {
+      "num_layers": 5,
+      "hidden_dim": 256,
+      "num_heads": 4,
+      "ffn_multiplier": 3,
+      "species_embedding_dim": 48,
+      "move_embedding_dim": 24,
+      "item_embedding_dim": 16,
+      "ability_embedding_dim": 16,
+      "type_embedding_dim": 12,
+      "max_window": 2,
+      "dropout": 0.1,
+      "aux_weight": 0.2,
+      "value_weight": 0.1,
+      "switch_weight": 1.0,
+      "label_smoothing": 0.0,
+      "no_value_head": true,
+      "candidate_head": false,
+      "split_head": true,
+      "move_identity": true,
+      "shuffle_moves": true,
+      "cosine_epochs": 80,
+      "prune_dead_features": true,
+      "batch_size": 1024,
+      "epochs": 40,
+      "lr": 0.0008,
+      "weight_decay": 0.01,
+      "warmup_steps": 150,
+      "patience": 7,
+      "grad_accum": 1,
+      "num_battles": 100000,
+      "seed": 42,
+      "data_dir": "data/processed",
+      "num_workers": 4,
+      "prefetch_factor": 4,
+      "persistent_workers": null,
+      "pin_memory": null,
+      "non_blocking_transfer": null,
+      "amp": "bf16",
+      "torch_compile": false
+    },
+    "metrics": {
+      "test_top1_accuracy": 0.27,
+      "test_top3_accuracy": 0.6469,
+      "test_loss": 1.8053,
+      "test_nll": 1.8046,
+      "test_ece": null,
+      "per_action_accuracy": {
+        "move1": {
+          "accuracy": 0.4835,
+          "count": 27468
+        },
+        "move2": {
+          "accuracy": 0.2334,
+          "count": 28627
+        },
+        "move3": {
+          "accuracy": 0.2767,
+          "count": 30375
+        },
+        "move4": {
+          "accuracy": 0.3194,
+          "count": 26494
+        },
+        "switch2": {
+          "accuracy": 0.2136,
+          "count": 14866
+        },
+        "switch3": {
+          "accuracy": 0.1804,
+          "count": 14038
+        },
+        "switch4": {
+          "accuracy": 0.1444,
+          "count": 13007
+        },
+        "switch5": {
+          "accuracy": 0.1347,
+          "count": 10981
+        },
+        "switch6": {
+          "accuracy": 0.1108,
+          "count": 6930
+        }
+      },
+      "move_accuracy": null,
+      "switch_accuracy": null,
+      "move_count": null,
+      "switch_count": null,
+      "best_epoch": 1,
+      "best_val_loss": 1.8046,
+      "wall_time_min": 40.59,
+      "parameter_count": 4333821,
+      "throughput_examples_sec": 14810.2,
+      "gpu_memory_used_gb": 0.113,
+      "peak_ram_gb": 21.322
+    },
+    "delta_from_parent": {
+      "test_top1_accuracy": -0.3143,
+      "test_top3_accuracy": -0.2279,
+      "test_loss": 0.7232,
+      "test_nll": 0.7228,
+      "throughput_examples_sec": -1554.7,
+      "wall_time_min": -39.27
+    },
+    "decision": null,
+    "notes": "/workspace/Pokemon-Battle-Autoresearch/Autoresearch/notes/ar-026_t2_5l256d_shuffle_identity_100k.md",
+    "timestamp": "2026-03-31T12:23:32.430167+00:00",
+    "seed": 42,
+    "checkpoint_path": "/workspace/Pokemon-Battle-Autoresearch/checkpoints/autoresearch_ar-026_t2_5l256d_shuffle_identity_100k",
+    "report_path": "/workspace/Pokemon-Battle-Autoresearch/Autoresearch/results/ar-026_t2_5l256d_shuffle_identity_100k_report.json",
+    "budget": {
+      "max_epochs": 40,
+      "max_minutes": 120
+    },
+    "lineage": {
+      "parent_name": "t2_shuffle_id_100k_cosine80_v2",
+      "base_config_source": "AR-025"
+    },
+    "start_timestamp": "2026-03-31T12:23:32.461747+00:00",
+    "return_code": 0,
+    "end_timestamp": "2026-03-31T13:04:07.785395+00:00"
+  },
+  {
+    "experiment_id": "AR-027",
+    "parent_id": "AR-025",
+    "name": "t2_5L256d_lr4e4_warmup300",
+    "description": "",
+    "hypothesis": "5L/256d with lower LR=4e-4 and warmup=300 to fix divergence seen in AR-026 at LR=8e-4",
+    "expected_impact": "",
+    "phase": "AR-unassigned",
+    "family": "custom",
+    "profile": null,
+    "profile_description": null,
+    "tier": 2,
+    "dataset_version": "gen3ou_50k_v1",
+    "tags": [],
+    "status": "completed",
+    "config_changes": {
+      "hidden_dim": 256,
+      "lr": 0.0004,
+      "num_layers": 5,
+      "patience": 10,
+      "warmup_steps": 300
+    },
+    "full_config": {
+      "num_layers": 5,
+      "hidden_dim": 256,
+      "num_heads": 4,
+      "ffn_multiplier": 3,
+      "species_embedding_dim": 48,
+      "move_embedding_dim": 24,
+      "item_embedding_dim": 16,
+      "ability_embedding_dim": 16,
+      "type_embedding_dim": 12,
+      "max_window": 2,
+      "dropout": 0.1,
+      "aux_weight": 0.2,
+      "value_weight": 0.1,
+      "switch_weight": 1.0,
+      "label_smoothing": 0.0,
+      "no_value_head": true,
+      "candidate_head": false,
+      "split_head": true,
+      "move_identity": true,
+      "shuffle_moves": true,
+      "cosine_epochs": 80,
+      "prune_dead_features": true,
+      "batch_size": 1024,
+      "epochs": 40,
+      "lr": 0.0004,
+      "weight_decay": 0.01,
+      "warmup_steps": 300,
+      "patience": 10,
+      "grad_accum": 1,
+      "num_battles": 100000,
+      "seed": 42,
+      "data_dir": "data/processed",
+      "num_workers": 4,
+      "prefetch_factor": 4,
+      "persistent_workers": null,
+      "pin_memory": null,
+      "non_blocking_transfer": null,
+      "amp": "bf16",
+      "torch_compile": false
+    },
+    "metrics": {
+      "test_top1_accuracy": 0.5863,
+      "test_top3_accuracy": 0.877,
+      "test_loss": 1.072,
+      "test_nll": 1.0718,
+      "test_ece": null,
+      "per_action_accuracy": {
+        "move1": {
+          "accuracy": 0.6276,
+          "count": 27468
+        },
+        "move2": {
+          "accuracy": 0.5741,
+          "count": 28627
+        },
+        "move3": {
+          "accuracy": 0.5515,
+          "count": 30375
+        },
+        "move4": {
+          "accuracy": 0.5664,
+          "count": 26494
+        },
+        "switch2": {
+          "accuracy": 0.6244,
+          "count": 14866
+        },
+        "switch3": {
+          "accuracy": 0.6221,
+          "count": 14038
+        },
+        "switch4": {
+          "accuracy": 0.5976,
+          "count": 13007
+        },
+        "switch5": {
+          "accuracy": 0.5695,
+          "count": 10981
+        },
+        "switch6": {
+          "accuracy": 0.5527,
+          "count": 6930
+        }
+      },
+      "move_accuracy": null,
+      "switch_accuracy": null,
+      "move_count": null,
+      "switch_count": null,
+      "best_epoch": 19,
+      "best_val_loss": 1.0679,
+      "wall_time_min": 72.95,
+      "parameter_count": 4333821,
+      "throughput_examples_sec": 15004.2,
+      "gpu_memory_used_gb": 0.113,
+      "peak_ram_gb": 21.38
+    },
+    "delta_from_parent": {
+      "test_top1_accuracy": 0.002,
+      "test_top3_accuracy": 0.0022,
+      "test_loss": -0.0101,
+      "test_nll": -0.01,
+      "throughput_examples_sec": -1360.7,
+      "wall_time_min": -6.91
+    },
+    "decision": null,
+    "notes": "/workspace/Pokemon-Battle-Autoresearch/Autoresearch/notes/ar-027_t2_5l256d_lr4e4_warmup300.md",
+    "timestamp": "2026-03-31T13:06:05.381562+00:00",
+    "seed": 42,
+    "checkpoint_path": "/workspace/Pokemon-Battle-Autoresearch/checkpoints/autoresearch_ar-027_t2_5l256d_lr4e4_warmup300",
+    "report_path": "/workspace/Pokemon-Battle-Autoresearch/Autoresearch/results/ar-027_t2_5l256d_lr4e4_warmup300_report.json",
+    "budget": {
+      "max_epochs": 40,
+      "max_minutes": 120
+    },
+    "lineage": {
+      "parent_name": "t2_shuffle_id_100k_cosine80_v2",
+      "base_config_source": "AR-025"
+    },
+    "start_timestamp": "2026-03-31T13:06:05.419318+00:00",
+    "return_code": 0,
+    "end_timestamp": "2026-03-31T14:19:02.459637+00:00"
+  },
+  {
+    "experiment_id": "AR-028",
+    "parent_id": "AR-027",
+    "name": "t2_5L256d_moveemb48",
+    "description": "",
+    "hypothesis": "Doubling move embedding dim from 24 to 48 gives more capacity to distinguish 325 moves in move-identity mode",
+    "expected_impact": "",
+    "phase": "AR-unassigned",
+    "family": "custom",
+    "profile": null,
+    "profile_description": null,
+    "tier": 2,
+    "dataset_version": "gen3ou_50k_v1",
+    "tags": [],
+    "status": "running",
+    "config_changes": {
+      "move_embedding_dim": 48
+    },
+    "full_config": {
+      "num_layers": 5,
+      "hidden_dim": 256,
+      "num_heads": 4,
+      "ffn_multiplier": 3,
+      "species_embedding_dim": 48,
+      "move_embedding_dim": 48,
+      "item_embedding_dim": 16,
+      "ability_embedding_dim": 16,
+      "type_embedding_dim": 12,
+      "max_window": 2,
+      "dropout": 0.1,
+      "aux_weight": 0.2,
+      "value_weight": 0.1,
+      "switch_weight": 1.0,
+      "label_smoothing": 0.0,
+      "no_value_head": true,
+      "candidate_head": false,
+      "split_head": true,
+      "move_identity": true,
+      "shuffle_moves": true,
+      "cosine_epochs": 80,
+      "prune_dead_features": true,
+      "batch_size": 1024,
+      "epochs": 40,
+      "lr": 0.0004,
+      "weight_decay": 0.01,
+      "warmup_steps": 300,
+      "patience": 10,
+      "grad_accum": 1,
+      "num_battles": 100000,
+      "seed": 42,
+      "data_dir": "data/processed",
+      "num_workers": 4,
+      "prefetch_factor": 4,
+      "persistent_workers": null,
+      "pin_memory": null,
+      "non_blocking_transfer": null,
+      "amp": "bf16",
+      "torch_compile": false
+    },
+    "metrics": {},
+    "delta_from_parent": {},
+    "decision": null,
+    "notes": "/workspace/Pokemon-Battle-Autoresearch/Autoresearch/notes/ar-028_t2_5l256d_moveemb48.md",
+    "timestamp": "2026-03-31T14:27:51.333446+00:00",
+    "seed": 42,
+    "checkpoint_path": "/workspace/Pokemon-Battle-Autoresearch/checkpoints/autoresearch_ar-028_t2_5l256d_moveemb48",
+    "report_path": "/workspace/Pokemon-Battle-Autoresearch/Autoresearch/results/ar-028_t2_5l256d_moveemb48_report.json",
+    "budget": {
+      "max_epochs": 40,
+      "max_minutes": 120
+    },
+    "lineage": {
+      "parent_name": "t2_5L256d_lr4e4_warmup300",
+      "base_config_source": "AR-027"
+    },
+    "start_timestamp": "2026-03-31T14:27:51.355288+00:00"
   }
 ]
