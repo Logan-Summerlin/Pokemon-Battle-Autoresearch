@@ -75,15 +75,13 @@ def parse_elo_from_tar_name(basename: str) -> int | None:
 
 
 def parse_battle_id_from_tar_name(basename: str) -> str | None:
-    """Extract the Showdown battle ID from a raw filename.
+    """Extract the numeric battle ID from a raw filename.
 
-    Format: {showdown_id}_{ELO}_{player}_vs_...
-    Returns the showdown_id portion.
+    Format: gen3ou-{BATTLEID}_{ELO}_{player}_vs_...
+    Returns just the numeric BATTLEID to match npz filenames.
     """
-    parts = basename.replace(".json.lz4", "").replace(".json", "").split("_")
-    if parts:
-        return parts[0]
-    return None
+    m = re.search(r"gen3ou-(\d+)_", basename)
+    return m.group(1) if m else None
 
 
 def parse_battle_id_from_npz(npz_name: str) -> str | None:
