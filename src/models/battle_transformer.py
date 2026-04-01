@@ -91,6 +91,8 @@ class TransformerConfig:
     use_candidate_head: bool = False  # Use candidate-conditioned policy head instead of pooled MLP
     use_split_head: bool = False  # Use separate move/switch scoring pathways
     move_identity_candidates: bool = False  # Use actual move IDs instead of slot embeddings for move candidates
+    policy_head_layers: int = 1  # Number of cross-attention layers in split policy head
+    action_self_attention: bool = False  # Self-attention over action candidates before scoring
 
     # Value head
     use_value_head: bool = True
@@ -757,6 +759,42 @@ class CandidateConditionedPolicyHead(nn.Module):
         return logits
 
 
+class _CrossAttentionBlock(nn.Module):
+    """Single cross-attention + FFN block with pre-norm residuals."""
+
+    def __init__(self, hidden_dim: int, num_heads: int, dropout: float) -> None:
+        super().__init__()
+        self.cross_attn = nn.MultiheadAttention(
+            embed_dim=hidden_dim, num_heads=num_heads,
+            dropout=dropout, batch_first=True,
+        )
+        self.cross_norm = nn.LayerNorm(hidden_dim)
+        self.ffn = nn.Sequential(
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_dim, hidden_dim),
+        )
+        self.ffn_norm = nn.LayerNorm(hidden_dim)
+
+    def forward(
+        self,
+        query: torch.Tensor,
+        memory: torch.Tensor,
+        memory_mask: torch.Tensor | None = None,
+    ) -> torch.Tensor:
+        # Pre-norm cross-attention with residual
+        normed = self.cross_norm(query)
+        attn_out, _ = self.cross_attn(
+            query=normed, key=memory, value=memory,
+            key_padding_mask=memory_mask,
+        )
+        x = query + attn_out
+        # Pre-norm FFN with residual
+        x = x + self.ffn(self.ffn_norm(x))
+        return x
+
+
 class SplitMoveSwitchPolicyHead(nn.Module):
     """Separate move and switch scoring pathways with shared encoder.
 
@@ -764,7 +802,7 @@ class SplitMoveSwitchPolicyHead(nn.Module):
     - MoveHead: scores up to 4 move candidates using active pokemon + move embeddings
     - SwitchHead: scores up to 5 switch candidates using bench pokemon tokens
 
-    Each head uses its own cross-attention over the shared encoder memory,
+    Each head uses its own cross-attention stack over the shared encoder memory,
     allowing moves and switches to attend to different battle-state features.
     Final output concatenates move scores (0-3) and switch scores (4-8) into
     the standard 9-action logit vector.
@@ -772,6 +810,12 @@ class SplitMoveSwitchPolicyHead(nn.Module):
     When move_identity_candidates=True, move candidates use the actual move ID
     embedding (e.g. "Recover", "Ice Punch") instead of abstract slot position
     embeddings (move1, move2, move3, move4).
+
+    When policy_head_layers > 1, each pathway uses a stack of cross-attention
+    blocks for deeper strategic reasoning.
+
+    When action_self_attention=True, all 9 candidates attend to each other
+    before scoring, enabling relative action reasoning.
     """
 
     def __init__(
@@ -782,10 +826,11 @@ class SplitMoveSwitchPolicyHead(nn.Module):
         super().__init__()
         h = config.hidden_dim
         self.use_move_identity = config.move_identity_candidates
+        self.use_action_self_attn = config.action_self_attention
+        n_policy_layers = config.policy_head_layers
 
         # ── Move pathway ──
         if self.use_move_identity:
-            # Project move identity embedding (move_embedding_dim) up to hidden_dim
             self.move_id_proj = nn.Linear(config.move_embedding_dim, h)
             self.move_emb = move_embedding  # shared with encoder
         else:
@@ -793,11 +838,10 @@ class SplitMoveSwitchPolicyHead(nn.Module):
         self.move_combine = nn.Sequential(
             nn.Linear(2 * h, h), nn.GELU(), nn.LayerNorm(h),
         )
-        self.move_cross_attn = nn.MultiheadAttention(
-            embed_dim=h, num_heads=config.num_heads,
-            dropout=config.dropout, batch_first=True,
-        )
-        self.move_cross_norm = nn.LayerNorm(h)
+        self.move_cross_blocks = nn.ModuleList([
+            _CrossAttentionBlock(h, config.num_heads, config.dropout)
+            for _ in range(n_policy_layers)
+        ])
         self.move_scorer = nn.Sequential(
             nn.Linear(h, h), nn.GELU(), nn.Dropout(config.dropout), nn.Linear(h, 1),
         )
@@ -806,14 +850,21 @@ class SplitMoveSwitchPolicyHead(nn.Module):
         self.switch_proj = nn.Sequential(
             nn.Linear(h, h), nn.GELU(), nn.LayerNorm(h),
         )
-        self.switch_cross_attn = nn.MultiheadAttention(
-            embed_dim=h, num_heads=config.num_heads,
-            dropout=config.dropout, batch_first=True,
-        )
-        self.switch_cross_norm = nn.LayerNorm(h)
+        self.switch_cross_blocks = nn.ModuleList([
+            _CrossAttentionBlock(h, config.num_heads, config.dropout)
+            for _ in range(n_policy_layers)
+        ])
         self.switch_scorer = nn.Sequential(
             nn.Linear(h, h), nn.GELU(), nn.Dropout(config.dropout), nn.Linear(h, 1),
         )
+
+        # ── Action self-attention (optional) ──
+        if self.use_action_self_attn:
+            self.action_self_attn = nn.MultiheadAttention(
+                embed_dim=h, num_heads=config.num_heads,
+                dropout=config.dropout, batch_first=True,
+            )
+            self.action_self_norm = nn.LayerNorm(h)
 
     def forward(
         self,
@@ -845,33 +896,38 @@ class SplitMoveSwitchPolicyHead(nn.Module):
         # ── Move scoring ──
         active_expanded = active_token.unsqueeze(1).expand(-1, 4, -1)  # (batch, 4, h)
         if self.use_move_identity and active_move_ids is not None:
-            # Use actual move identity embeddings
             move_embs = self.move_emb(active_move_ids)  # (batch, 4, move_emb_dim)
             move_embs = self.move_id_proj(move_embs)  # (batch, 4, h)
         else:
-            # Fall back to abstract slot embeddings
             move_slot_ids = torch.arange(4, device=device)
             move_embs = self.move_slot_emb(move_slot_ids).unsqueeze(0).expand(batch_size, -1, -1)
         move_candidates = self.move_combine(
             torch.cat([active_expanded, move_embs], dim=-1)
         )  # (batch, 4, h)
 
-        move_attn_out, _ = self.move_cross_attn(
-            query=move_candidates, key=encoder_memory, value=encoder_memory,
-            key_padding_mask=memory_mask,
-        )
-        move_scored = self.move_cross_norm(move_candidates + move_attn_out)
-        move_logits = self.move_scorer(move_scored).squeeze(-1)  # (batch, 4)
+        for block in self.move_cross_blocks:
+            move_candidates = block(move_candidates, encoder_memory, memory_mask)
 
         # ── Switch scoring ──
         switch_candidates = self.switch_proj(bench_tokens)  # (batch, 5, h)
 
-        switch_attn_out, _ = self.switch_cross_attn(
-            query=switch_candidates, key=encoder_memory, value=encoder_memory,
-            key_padding_mask=memory_mask,
-        )
-        switch_scored = self.switch_cross_norm(switch_candidates + switch_attn_out)
-        switch_logits = self.switch_scorer(switch_scored).squeeze(-1)  # (batch, 5)
+        for block in self.switch_cross_blocks:
+            switch_candidates = block(switch_candidates, encoder_memory, memory_mask)
+
+        # ── Action self-attention (optional) ──
+        if self.use_action_self_attn:
+            all_candidates = torch.cat([move_candidates, switch_candidates], dim=1)  # (batch, 9, h)
+            normed = self.action_self_norm(all_candidates)
+            self_attn_out, _ = self.action_self_attn(
+                query=normed, key=normed, value=normed,
+            )
+            all_candidates = all_candidates + self_attn_out
+            move_candidates = all_candidates[:, :4, :]
+            switch_candidates = all_candidates[:, 4:, :]
+
+        # ── Score ──
+        move_logits = self.move_scorer(move_candidates).squeeze(-1)  # (batch, 4)
+        switch_logits = self.switch_scorer(switch_candidates).squeeze(-1)  # (batch, 5)
 
         # ── Combine into 9-action logits ──
         return torch.cat([move_logits, switch_logits], dim=1)  # (batch, 9)

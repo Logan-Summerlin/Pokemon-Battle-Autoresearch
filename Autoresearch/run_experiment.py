@@ -76,6 +76,8 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "move_identity": False,
     "shuffle_moves": False,
     "cosine_epochs": None,
+    "policy_head_layers": 1,
+    "action_self_attention": False,
     "prune_dead_features": True,
     "batch_size": 64,
     "epochs": 30,
@@ -106,6 +108,7 @@ BOOL_KEYS = {
     "split_head",
     "move_identity",
     "shuffle_moves",
+    "action_self_attention",
     "prune_dead_features",
     "persistent_workers",
     "pin_memory",
@@ -133,6 +136,7 @@ INT_KEYS = {
     "num_workers",
     "prefetch_factor",
     "cosine_epochs",
+    "policy_head_layers",
 }
 FLOAT_KEYS = {"dropout", "aux_weight", "value_weight", "lr", "weight_decay", "switch_weight", "label_smoothing"}
 STRING_KEYS = {"data_dir", "amp", "battle_manifest", "resume_from"}
@@ -381,6 +385,10 @@ def build_train_command(config: dict[str, Any], checkpoint_dir: Path, report_pat
         cmd.append("--move-identity")
     if config.get("shuffle_moves"):
         cmd.append("--shuffle-moves")
+    if config.get("policy_head_layers", 1) > 1:
+        cmd.extend(["--policy-head-layers", str(config["policy_head_layers"])])
+    if config.get("action_self_attention"):
+        cmd.append("--action-self-attention")
     if config.get("cosine_epochs") is not None:
         cmd.extend(["--cosine-epochs", str(config["cosine_epochs"])])
     if config.get("prune_dead_features"):

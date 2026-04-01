@@ -830,6 +830,10 @@ def main() -> None:
                        help="Use actual move ID embeddings instead of slot embeddings for move candidates")
     parser.add_argument("--shuffle-moves", action="store_true",
                        help="Randomly shuffle move slot order per battle to prevent slot memorization")
+    parser.add_argument("--policy-head-layers", type=int, default=1,
+                       help="Number of cross-attention layers in split policy head (default: 1)")
+    parser.add_argument("--action-self-attention", action="store_true",
+                       help="Enable self-attention over action candidates before scoring")
     parser.add_argument("--cosine-epochs", type=int, default=None,
                        help="Epoch count for cosine LR schedule (default: same as --epochs). Set higher to slow LR decay.")
     parser.add_argument("--switch-weight", type=float, default=1.0,
@@ -1082,6 +1086,8 @@ def main() -> None:
         use_candidate_head=args.candidate_head,
         use_split_head=args.split_head,
         move_identity_candidates=args.move_identity,
+        policy_head_layers=args.policy_head_layers,
+        action_self_attention=args.action_self_attention,
     )
     model = BattleTransformer(config).to(device)
 
