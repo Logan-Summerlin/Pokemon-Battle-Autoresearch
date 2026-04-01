@@ -3886,5 +3886,153 @@
     "start_timestamp": "2026-04-01T00:05:11.167759+00:00",
     "return_code": 0,
     "end_timestamp": "2026-04-01T00:40:35.495157+00:00"
+  },
+  {
+    "experiment_id": "AR-032",
+    "parent_id": "AR-031",
+    "name": "t2_curriculum_stage2_1300plus",
+    "description": "",
+    "hypothesis": "Curriculum Stage 2: specialize on 1300+ Elo data, resuming from Stage 1 foundation. Should surpass 58.63% by combining broad mechanical knowledge with high-quality decision data.",
+    "expected_impact": "",
+    "phase": "AR-unassigned",
+    "family": "custom",
+    "profile": null,
+    "profile_description": null,
+    "tier": 2,
+    "dataset_version": "gen3ou_50k_v1",
+    "tags": [],
+    "status": "completed",
+    "config_changes": {
+      "battle_manifest": "data/curriculum/stage2.json",
+      "cosine_epochs": 50,
+      "epochs": 25,
+      "patience": 10,
+      "resume_from": "checkpoints/autoresearch_ar-031_t2_curriculum_stage1_1100_1300",
+      "warmup_steps": 100
+    },
+    "full_config": {
+      "num_layers": 5,
+      "hidden_dim": 256,
+      "num_heads": 4,
+      "ffn_multiplier": 3,
+      "species_embedding_dim": 48,
+      "move_embedding_dim": 24,
+      "item_embedding_dim": 16,
+      "ability_embedding_dim": 16,
+      "type_embedding_dim": 12,
+      "max_window": 2,
+      "dropout": 0.1,
+      "aux_weight": 0.2,
+      "value_weight": 0.1,
+      "switch_weight": 1.0,
+      "label_smoothing": 0.0,
+      "no_value_head": true,
+      "candidate_head": false,
+      "split_head": true,
+      "move_identity": true,
+      "shuffle_moves": true,
+      "cosine_epochs": 50,
+      "prune_dead_features": true,
+      "batch_size": 1024,
+      "epochs": 25,
+      "lr": 0.0004,
+      "weight_decay": 0.01,
+      "warmup_steps": 100,
+      "patience": 10,
+      "grad_accum": 1,
+      "num_battles": 100000,
+      "seed": 42,
+      "data_dir": "data/processed",
+      "num_workers": 4,
+      "prefetch_factor": 4,
+      "persistent_workers": null,
+      "pin_memory": null,
+      "non_blocking_transfer": null,
+      "amp": "bf16",
+      "torch_compile": false,
+      "battle_manifest": "data/curriculum/stage2.json",
+      "resume_from": "checkpoints/autoresearch_ar-031_t2_curriculum_stage1_1100_1300"
+    },
+    "metrics": {
+      "test_top1_accuracy": 0.5933,
+      "test_top3_accuracy": 0.8822,
+      "test_loss": 1.0623,
+      "test_nll": 1.0619,
+      "test_ece": null,
+      "per_action_accuracy": {
+        "move1": {
+          "accuracy": 0.6317,
+          "count": 32536
+        },
+        "move2": {
+          "accuracy": 0.5766,
+          "count": 34021
+        },
+        "move3": {
+          "accuracy": 0.5617,
+          "count": 36451
+        },
+        "move4": {
+          "accuracy": 0.5994,
+          "count": 31680
+        },
+        "switch2": {
+          "accuracy": 0.6313,
+          "count": 18696
+        },
+        "switch3": {
+          "accuracy": 0.6003,
+          "count": 17280
+        },
+        "switch4": {
+          "accuracy": 0.5784,
+          "count": 16217
+        },
+        "switch5": {
+          "accuracy": 0.581,
+          "count": 13728
+        },
+        "switch6": {
+          "accuracy": 0.5758,
+          "count": 8697
+        }
+      },
+      "move_accuracy": null,
+      "switch_accuracy": null,
+      "move_count": null,
+      "switch_count": null,
+      "best_epoch": 15,
+      "best_val_loss": 1.057,
+      "wall_time_min": 72.86,
+      "parameter_count": 4333821,
+      "throughput_examples_sec": 15246.4,
+      "gpu_memory_used_gb": 0.113,
+      "peak_ram_gb": 22.438
+    },
+    "delta_from_parent": {
+      "test_top1_accuracy": 0.066,
+      "test_top3_accuracy": 0.0417,
+      "test_loss": -0.1539,
+      "test_nll": -0.1539,
+      "throughput_examples_sec": -895.5,
+      "wall_time_min": 37.45
+    },
+    "decision": null,
+    "notes": "/workspace/Pokemon-Battle-Autoresearch/Autoresearch/notes/ar-032_t2_curriculum_stage2_1300plus.md",
+    "timestamp": "2026-04-01T00:43:00.970238+00:00",
+    "seed": 42,
+    "checkpoint_path": "/workspace/Pokemon-Battle-Autoresearch/checkpoints/autoresearch_ar-032_t2_curriculum_stage2_1300plus",
+    "report_path": "/workspace/Pokemon-Battle-Autoresearch/Autoresearch/results/ar-032_t2_curriculum_stage2_1300plus_report.json",
+    "budget": {
+      "max_epochs": 25,
+      "max_minutes": 120
+    },
+    "lineage": {
+      "parent_name": "t2_curriculum_stage1_1100_1300",
+      "base_config_source": "AR-031"
+    },
+    "start_timestamp": "2026-04-01T00:43:00.992092+00:00",
+    "return_code": 0,
+    "end_timestamp": "2026-04-01T01:55:52.650714+00:00"
   }
 ]
