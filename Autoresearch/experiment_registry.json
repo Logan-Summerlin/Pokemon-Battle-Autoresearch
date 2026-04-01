@@ -4034,5 +4034,148 @@
     "start_timestamp": "2026-04-01T00:43:00.992092+00:00",
     "return_code": 0,
     "end_timestamp": "2026-04-01T01:55:52.650714+00:00"
+  },
+  {
+    "experiment_id": "AR-033",
+    "parent_id": "AR-031",
+    "name": "t2_curriculum_w5_stage1",
+    "description": "",
+    "hypothesis": "Curriculum Stage 1 with window=5 (vs window=2). More battle history should help learn basic patterns from 1100-1300 Elo data.",
+    "expected_impact": "",
+    "phase": "AR-unassigned",
+    "family": "custom",
+    "profile": null,
+    "profile_description": null,
+    "tier": 2,
+    "dataset_version": "gen3ou_50k_v1",
+    "tags": [],
+    "status": "completed",
+    "config_changes": {
+      "max_window": 5
+    },
+    "full_config": {
+      "num_layers": 5,
+      "hidden_dim": 256,
+      "num_heads": 4,
+      "ffn_multiplier": 3,
+      "species_embedding_dim": 48,
+      "move_embedding_dim": 24,
+      "item_embedding_dim": 16,
+      "ability_embedding_dim": 16,
+      "type_embedding_dim": 12,
+      "max_window": 5,
+      "dropout": 0.1,
+      "aux_weight": 0.2,
+      "value_weight": 0.1,
+      "switch_weight": 1.0,
+      "label_smoothing": 0.0,
+      "no_value_head": true,
+      "candidate_head": false,
+      "split_head": true,
+      "move_identity": true,
+      "shuffle_moves": true,
+      "cosine_epochs": 40,
+      "prune_dead_features": true,
+      "batch_size": 1024,
+      "epochs": 20,
+      "lr": 0.0004,
+      "weight_decay": 0.01,
+      "warmup_steps": 300,
+      "patience": 20,
+      "grad_accum": 1,
+      "num_battles": 100000,
+      "seed": 42,
+      "data_dir": "data/processed",
+      "num_workers": 4,
+      "prefetch_factor": 4,
+      "persistent_workers": null,
+      "pin_memory": null,
+      "non_blocking_transfer": null,
+      "amp": "bf16",
+      "torch_compile": false,
+      "battle_manifest": "data/curriculum/stage1.json",
+      "resume_from": null
+    },
+    "metrics": {
+      "test_top1_accuracy": 0.595,
+      "test_top3_accuracy": 0.8864,
+      "test_loss": 1.0692,
+      "test_nll": 1.0686,
+      "test_ece": null,
+      "per_action_accuracy": {
+        "move1": {
+          "accuracy": 0.6637,
+          "count": 18662
+        },
+        "move2": {
+          "accuracy": 0.5899,
+          "count": 18945
+        },
+        "move3": {
+          "accuracy": 0.5924,
+          "count": 20515
+        },
+        "move4": {
+          "accuracy": 0.6241,
+          "count": 17889
+        },
+        "switch2": {
+          "accuracy": 0.5708,
+          "count": 9483
+        },
+        "switch3": {
+          "accuracy": 0.5563,
+          "count": 9365
+        },
+        "switch4": {
+          "accuracy": 0.5321,
+          "count": 8608
+        },
+        "switch5": {
+          "accuracy": 0.5448,
+          "count": 7269
+        },
+        "switch6": {
+          "accuracy": 0.5587,
+          "count": 4346
+        }
+      },
+      "move_accuracy": null,
+      "switch_accuracy": null,
+      "move_count": null,
+      "switch_count": null,
+      "best_epoch": 16,
+      "best_val_loss": 1.0777,
+      "wall_time_min": 53.13,
+      "parameter_count": 4333821,
+      "throughput_examples_sec": 7966.5,
+      "gpu_memory_used_gb": 0.113,
+      "peak_ram_gb": 22.546
+    },
+    "delta_from_parent": {
+      "test_top1_accuracy": 0.0677,
+      "test_top3_accuracy": 0.0459,
+      "test_loss": -0.147,
+      "test_nll": -0.1472,
+      "throughput_examples_sec": -8175.4,
+      "wall_time_min": 17.72
+    },
+    "decision": null,
+    "notes": "/workspace/Pokemon-Battle-Autoresearch/Autoresearch/notes/ar-033_t2_curriculum_w5_stage1.md",
+    "timestamp": "2026-04-01T03:12:55.955471+00:00",
+    "seed": 42,
+    "checkpoint_path": "/workspace/Pokemon-Battle-Autoresearch/checkpoints/autoresearch_ar-033_t2_curriculum_w5_stage1",
+    "report_path": "/workspace/Pokemon-Battle-Autoresearch/Autoresearch/results/ar-033_t2_curriculum_w5_stage1_report.json",
+    "budget": {
+      "max_epochs": 20,
+      "max_minutes": 120
+    },
+    "lineage": {
+      "parent_name": "t2_curriculum_stage1_1100_1300",
+      "base_config_source": "AR-031"
+    },
+    "start_timestamp": "2026-04-01T03:12:55.977858+00:00",
+    "return_code": 0,
+    "end_timestamp": "2026-04-01T04:06:03.738023+00:00"
   }
 ]
