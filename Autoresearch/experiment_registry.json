@@ -5099,7 +5099,7 @@
     "tier": 2,
     "dataset_version": "gen3ou_50k_v1",
     "tags": [],
-    "status": "registered",
+    "status": "completed",
     "config_changes": {
       "action_self_attention": true
     },
@@ -5148,10 +5148,21 @@
       "battle_manifest": "data/curriculum/stage1.json",
       "resume_from": null
     },
-    "metrics": {},
+    "metrics": {
+      "test_top1_accuracy": 0.6779,
+      "test_top3_accuracy": 0.9342,
+      "test_loss": 0.8428,
+      "test_nll": 0.8455,
+      "test_ece": null,
+      "move_accuracy": null,
+      "switch_accuracy": null,
+      "parameter_count": 5653245,
+      "wall_time_min": 123.8,
+      "throughput_examples_sec": null
+    },
     "delta_from_parent": {},
-    "decision": null,
-    "notes": "/workspace/Pokemon-Battle-Autoresearch/Autoresearch/notes/ar-041_t2_curr_w5_action_attn_s1_v2.md",
+    "decision": "PROMOTE",
+    "notes": "NEW CHAMPION! 67.79% Top-1 (+1.33pp over AR-039). Action self-attention enables relative reasoning between action candidates. Move accuracy jumped +2.4pp. Tested on 1300+ Elo data.",
     "timestamp": "2026-04-03T16:55:42.650742+00:00",
     "seed": 42,
     "checkpoint_path": "/workspace/Pokemon-Battle-Autoresearch/checkpoints/autoresearch_ar-041_t2_curr_w5_action_attn_s1_v2",
