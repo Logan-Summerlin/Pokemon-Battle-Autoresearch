@@ -5190,7 +5190,7 @@
     "tier": 2,
     "dataset_version": "gen3ou_50k_v1",
     "tags": [],
-    "status": "registered",
+    "status": "completed",
     "config_changes": {
       "action_self_attention": false,
       "policy_head_layers": 3
@@ -5240,10 +5240,17 @@
       "battle_manifest": "data/curriculum/stage1.json",
       "resume_from": null
     },
-    "metrics": {},
+    "metrics": {
+      "test_top1_accuracy": 0.6683,
+      "test_top3_accuracy": 0.9277,
+      "test_loss": 0.8753,
+      "test_nll": null,
+      "parameter_count": 6181117,
+      "wall_time_min": 128.0
+    },
     "delta_from_parent": {},
-    "decision": null,
-    "notes": "/workspace/Pokemon-Battle-Autoresearch/Autoresearch/notes/ar-042_t2_curr_w5_3layer_policy_s1.md",
+    "decision": "KILL",
+    "notes": "66.83% Top-1 (+0.37pp over AR-039, -0.96pp vs AR-041 champion). 3-layer policy slightly better than 2-layer but not enough to justify extra params.",
     "timestamp": "2026-04-03T19:57:55.657643+00:00",
     "seed": 42,
     "checkpoint_path": "/workspace/Pokemon-Battle-Autoresearch/checkpoints/autoresearch_ar-042_t2_curr_w5_3layer_policy_s1",
