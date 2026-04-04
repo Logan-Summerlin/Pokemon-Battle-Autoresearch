@@ -5358,7 +5358,7 @@
     "tier": 2,
     "dataset_version": "gen3ou_50k_v1",
     "tags": [],
-    "status": "registered",
+    "status": "completed",
     "config_changes": {
       "batch_size": 4096,
       "lr": 0.0008
@@ -5408,10 +5408,17 @@
       "battle_manifest": "data/curriculum/stage1.json",
       "resume_from": null
     },
-    "metrics": {},
+    "metrics": {
+      "test_top1_accuracy": 0.6677,
+      "test_top3_accuracy": 0.9279,
+      "test_loss": 0.868,
+      "test_nll": null,
+      "parameter_count": 5653245,
+      "wall_time_min": 123.39999999999999
+    },
     "delta_from_parent": {},
-    "decision": null,
-    "notes": "/workspace/Pokemon-Battle-Autoresearch/Autoresearch/notes/ar-044_t2_curr_w5_action_attn_bs4096_s1.md",
+    "decision": "KILL",
+    "notes": "66.77% Top-1 (-1.02pp vs AR-041 champion). 4x batch size with sqrt LR scaling hurts accuracy - fewer gradient updates per epoch not compensated by larger batches. Better calibration but lower accuracy.",
     "timestamp": "2026-04-04T01:55:13.151668+00:00",
     "seed": 42,
     "checkpoint_path": "/workspace/Pokemon-Battle-Autoresearch/checkpoints/autoresearch_ar-044_t2_curr_w5_action_attn_bs4096_s1",
